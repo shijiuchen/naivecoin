@@ -9,10 +9,12 @@ import {connectToPeers, getSockets, initP2PServer} from './p2p';
 import {UnspentTxOut} from './transaction';
 import {getTransactionPool} from './transactionPool';
 import {getPublicFromWallet, initWallet} from './wallet';
+import {Agent} from './agent';
 
 const httpPort: number = parseInt(process.env.HTTP_PORT) || 3001;
 const p2pPort: number = parseInt(process.env.P2P_PORT) || 6001;
-
+let map=new Map<string,string[]>();
+const agent: Agent=new Agent(0,[],map,null,[],[]);//初始化agent
 const initHttpServer = (myHttpPort: number) => {
     const app = express();
     app.use(bodyParser.json());
@@ -123,6 +125,21 @@ const initHttpServer = (myHttpPort: number) => {
     });
     app.post('/addPeer', (req, res) => {
         connectToPeers(req.body.peer);
+        res.send();
+    });
+
+    app.post('/register', (req, res) => {
+        agent.register(req.body.ipaddress,req.body.cpu,req.body.mem);//加入CPU和mem註冊
+        res.send();
+    });
+
+    app.post('/deployTask', (req, res) => {
+        agent.deployTask(req.body.address, req.body.taskName);
+        res.send();
+    });
+
+    app.post('/schedulerTask', (req, res) => {
+        agent.schedulerTask(req.body.taskName,req.body.params);
         res.send();
     });
 

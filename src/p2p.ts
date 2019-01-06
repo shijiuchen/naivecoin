@@ -2,10 +2,11 @@ import * as WebSocket from 'ws';
 import {Server} from 'ws';
 import {
     addBlockToChain, Block, getBlockchain, getLatestBlock, handleReceivedTransaction, isValidBlockStructure,
-    replaceChain
+    replaceChain,getDifficulty,generatePouwNextBlock
 } from './blockchain';
 import {Transaction} from './transaction';
 import {getTransactionPool} from './transactionPool';
+
 
 const sockets: WebSocket[] = [];
 
@@ -14,7 +15,9 @@ enum MessageType {
     QUERY_ALL = 1,
     RESPONSE_BLOCKCHAIN = 2,
     QUERY_TRANSACTION_POOL = 3,
-    RESPONSE_TRANSACTION_POOL = 4
+    RESPONSE_TRANSACTION_POOL = 4,
+    GET_PARAM = 5,
+    FILE_TASK = 10
 }
 
 class Message {
@@ -97,6 +100,12 @@ const initMessageHandler = (ws: WebSocket) => {
                             console.log(e.message);
                         }
                     });
+                    break;
+                case MessageType.GET_PARAM:
+
+                    generatePouwNextBlock(message);
+                    break;
+                case MessageType.FILE_TASK:
                     break;
             }
         } catch (e) {
@@ -188,4 +197,4 @@ const broadCastTransactionPool = () => {
     broadcast(responseTransactionPoolMsg());
 };
 
-export {connectToPeers, broadcastLatest, broadCastTransactionPool, initP2PServer, getSockets};
+export {connectToPeers, broadcastLatest, broadCastTransactionPool, initP2PServer, getSockets, Message, MessageType,JSONToObject};

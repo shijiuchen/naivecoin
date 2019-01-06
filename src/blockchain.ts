@@ -1,12 +1,13 @@
 import * as CryptoJS from 'crypto-js';
 import * as _ from 'lodash';
-import {broadcastLatest, broadCastTransactionPool} from './p2p';
+import {broadcastLatest, broadCastTransactionPool,Message, MessageType} from './p2p';
 import {
     getCoinbaseTransaction, isValidAddress, processTransactions, Transaction, UnspentTxOut
 } from './transaction';
 import {addToTransactionPool, getTransactionPool, updateTransactionPool} from './transactionPool';
 import {hexToBinary} from './util';
 import {createTransaction, findUnspentTxOuts, getBalance, getPrivateFromWallet, getPublicFromWallet} from './wallet';
+// import {Message} from "_debugger";
 
 class Block {
 
@@ -17,9 +18,10 @@ class Block {
     public data: Transaction[];
     public difficulty: number;
     public nonce: number;
+    public pouw: string;
 
     constructor(index: number, hash: string, previousHash: string,
-                timestamp: number, data: Transaction[], difficulty: number, nonce: number) {
+                timestamp: number, data: Transaction[], difficulty: number, nonce: number, pouw: string) {
         this.index = index;
         this.previousHash = previousHash;
         this.timestamp = timestamp;
@@ -27,6 +29,7 @@ class Block {
         this.hash = hash;
         this.difficulty = difficulty;
         this.nonce = nonce;
+        this.pouw=pouw;
     }
 }
 
@@ -40,7 +43,7 @@ const genesisTransaction = {
 };
 
 const genesisBlock: Block = new Block(
-    0, '91a73664bc84c0baa1fc75ea6e4aa6d1d20c5df664c724e3159aefc2e1186627', '', 1465154705, [genesisTransaction], 0, 0
+    0, '91a73664bc84c0baa1fc75ea6e4aa6d1d20c5df664c724e3159aefc2e1186627', '', 1465154705, [genesisTransaction], 0, 0, ''
 );
 
 let blockchain: Block[] = [genesisBlock];
@@ -92,7 +95,7 @@ const getCurrentTimestamp = (): number => Math.round(new Date().getTime() / 1000
 
 const generateRawNextBlock = (blockData: Transaction[]) => {
     const previousBlock: Block = getLatestBlock();
-    const difficulty: number = getDifficulty(getBlockchain());
+    const difficulty: number = 0;
     const nextIndex: number = previousBlock.index + 1;
     const nextTimestamp: number = getCurrentTimestamp();
     const newBlock: Block = findBlock(nextIndex, previousBlock.hash, nextTimestamp, blockData, difficulty);
@@ -102,7 +105,43 @@ const generateRawNextBlock = (blockData: Transaction[]) => {
     } else {
         return null;
     }
-
+};
+/**
+ * 执行有用功、生成Pouw区块
+ * TODO 任务结果返回用户
+ * @param blockData
+ */
+const generatePouwNextBlock = (message: Message ) => {
+    let pouw;
+    //任务执行过程
+    console.log(message);
+    console.log(getDifficulty(getBlockchain()));
+    const { exec } = require('child_process');
+    exec('docker run  --rm \\\n' +
+        '    -v bazel-cache:/root/.cache/bazel \\\n' +
+        '    -v "/Users/nmsmacpro/asylo-examples":/opt/my-project \\\n' +
+        '    -w /opt/my-project \\\n' +
+        '    gcr.io/asylo-framework/asylo \\\n' +
+        '    bazel run --config=enc-sim //quickstart -- --message="'+message.data+','+getDifficulty(getBlockchain())+'"', (err, stdout, stderr) => {
+        console.log(stdout);
+        pouw=stdout;
+    });
+    if(pouw == "FAILED")
+        return;
+    else {
+        const previousBlock: Block = getLatestBlock();
+        const nextIndex: number = previousBlock.index + 1;
+        const nextTimestamp: number = getCurrentTimestamp();
+        const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
+        const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, [coinbaseTx], getDifficulty(getBlockchain()), 0,pouw);
+        const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, [coinbaseTx], getDifficulty(getBlockchain()), 0,pouw);
+        if (addBlockToChain(newBlock)) {
+            broadcastLatest();
+            return newBlock;
+        } else {
+            return null;
+        }
+    }
 };
 
 // gets the unspent transaction outputs owned by the wallet
@@ -134,7 +173,7 @@ const findBlock = (index: number, previousHash: string, timestamp: number, data:
     while (true) {
         const hash: string = calculateHash(index, previousHash, timestamp, data, difficulty, nonce);
         if (hashMatchesDifficulty(hash, difficulty)) {
-            return new Block(index, hash, previousHash, timestamp, data, difficulty, nonce);
+            return new Block(index, hash, previousHash, timestamp, data, difficulty, nonce,'');
         }
         nonce++;
     }
@@ -157,6 +196,10 @@ const calculateHashForBlock = (block: Block): string =>
 const calculateHash = (index: number, previousHash: string, timestamp: number, data: Transaction[],
                        difficulty: number, nonce: number): string =>
     CryptoJS.SHA256(index + previousHash + timestamp + data + difficulty + nonce).toString();
+
+const calculatepouwHash = (index: number, previousHash: string, timestamp: number, data: Transaction[],
+                       difficulty: number, nonce: number,pouw: string): string =>
+    CryptoJS.SHA256(index + previousHash + timestamp + data + difficulty + nonce+pouw).toString();
 
 const isValidBlockStructure = (block: Block): boolean => {
     return typeof block.index === 'number'
@@ -295,5 +338,5 @@ export {
     Block, getBlockchain, getUnspentTxOuts, getLatestBlock, sendTransaction,
     generateRawNextBlock, generateNextBlock, generatenextBlockWithTransaction,
     handleReceivedTransaction, getMyUnspentTransactionOutputs,
-    getAccountBalance, isValidBlockStructure, replaceChain, addBlockToChain
+    getAccountBalance, isValidBlockStructure, replaceChain, addBlockToChain,getDifficulty,generatePouwNextBlock
 };

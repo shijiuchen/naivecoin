@@ -139,7 +139,7 @@ const initHttpServer = (myHttpPort: number) => {
     });
 
     app.post('/schedulerTask', (req, res) => {
-        agent.schedulerTask(req.body.taskName,req.body.params);
+        agent.schedulerTask(req.body.address,req.body.taskName,req.body.params);//将调用发布任务接口的节点ip进行传送
         res.send();
     });
 

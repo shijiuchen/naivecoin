@@ -1,6 +1,6 @@
 import * as CryptoJS from 'crypto-js';
 import * as _ from 'lodash';
-import {broadcastLatest, broadCastTransactionPool,Message, MessageType} from './p2p';
+import {broadcastLatest, broadCastTransactionPool, getSockets, Message, MessageType} from './p2p';
 import {
     getCoinbaseTransaction, isValidAddress, processTransactions, Transaction, UnspentTxOut
 } from './transaction';
@@ -112,7 +112,15 @@ const generateRawNextBlock = (blockData: Transaction[]) => {
  * @param blockData
  */
 const generatePouwNextBlock = (message: Message ) => {
+    //对message做分割处理
+    //"2:3:4:5".split(":")	//将返回["2", "3", "4", "5"]
+    let information: string[]=message.data.toString().split(":");
+    let params: string = information[1];
+    let address: string = information[0];
+
     let pouw;
+    let result;
+    let ncount;
     //任务执行过程
     console.log(message);
     console.log(getDifficulty(getBlockchain()));
@@ -122,13 +130,24 @@ const generatePouwNextBlock = (message: Message ) => {
         '    -v "/Users/nmsmacpro/asylo-examples":/opt/my-project \\\n' +
         '    -w /opt/my-project \\\n' +
         '    gcr.io/asylo-framework/asylo \\\n' +
-        '    bazel run --config=enc-sim //quickstart -- --message="'+message.data+','+getDifficulty(getBlockchain())+'"', (err, stdout, stderr) => {
+        '    bazel run --config=enc-sim //quickstart -- --message="'+params+','+getDifficulty(getBlockchain())+'"', (err, stdout, stderr) => {
         console.log(stdout);
-        pouw=stdout;
+
+        let returnInf: string[] = stdout.toString().split(';');
+        result = returnInf[0];
+        pouw = returnInf[1];
+        ncount = returnInf[2];
     });
-    if(pouw == "FAILED")
-        return;
+
+    //根据计算的时间复杂度进行付费 发送交易的记录变量是address
+
+    if(pouw == "FAILED"){
+
+        //Do nothing
+
+    }
     else {
+        //生成coinbase奖励区块
         const previousBlock: Block = getLatestBlock();
         const nextIndex: number = previousBlock.index + 1;
         const nextTimestamp: number = getCurrentTimestamp();
@@ -141,7 +160,24 @@ const generatePouwNextBlock = (message: Message ) => {
         } else {
             return null;
         }
+
     }
+
+    //任务结果返还给用户，以及执行任务矿工节点的公钥
+    getSockets().map((s: any) => {
+        //console.log(s._socket.remoteAddress);
+        let ip;
+        if (s._socket.remoteAddress.substr(0, 7) == "::ffff:") {
+            ip = s._socket.remoteAddress.substr(7)
+        }
+        if(ip == address){
+            let information : Message = ({'type': MessageType.RESULT, 'data': result+'?'+ncount+'?'+getPublicFromWallet()});
+            console.log(information);
+            console.log(JSON.stringify(information));
+            s.send(JSON.stringify(information));
+        }
+    });
+
 };
 
 // gets the unspent transaction outputs owned by the wallet

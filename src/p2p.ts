@@ -2,7 +2,7 @@ import * as WebSocket from 'ws';
 import {Server} from 'ws';
 import {
     addBlockToChain, Block, getBlockchain, getLatestBlock, handleReceivedTransaction, isValidBlockStructure,
-    replaceChain,getDifficulty,generatePouwNextBlock
+    replaceChain, getDifficulty, generatePouwNextBlock, sendTransaction
 } from './blockchain';
 import {Transaction} from './transaction';
 import {getTransactionPool} from './transactionPool';
@@ -17,6 +17,7 @@ enum MessageType {
     QUERY_TRANSACTION_POOL = 3,
     RESPONSE_TRANSACTION_POOL = 4,
     GET_PARAM = 5,
+    RESULT = 6,
     FILE_TASK = 10
 }
 
@@ -104,6 +105,17 @@ const initMessageHandler = (ws: WebSocket) => {
                 case MessageType.GET_PARAM:
 
                     generatePouwNextBlock(message);
+                    break;
+                case MessageType.RESULT:
+
+                    let returnMes: string[] = message.data.toString().split('?');
+                    let returnCount: string = returnMes[1];
+                    let returnRes: string = returnMes[0];
+                    let returnPK: string = returnMes[2];
+                    console.log(returnRes);//将返还结果进行打印
+                    sendTransaction(returnPK,Math.ceil(parseInt(returnCount)/100));
+
+
                     break;
                 case MessageType.FILE_TASK:
                     break;

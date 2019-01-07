@@ -98,7 +98,7 @@ const generateRawNextBlock = (blockData: Transaction[]) => {
     const difficulty: number = 0;
     const nextIndex: number = previousBlock.index + 1;
     const nextTimestamp: number = getCurrentTimestamp();
-    const newBlock: Block = findBlock(nextIndex, previousBlock.hash, nextTimestamp, blockData, difficulty);
+    const newBlock: Block = findBlock(nextIndex, previousBlock.hash, nextTimestamp, blockData, difficulty,"");
     if (addBlockToChain(newBlock)) {
         broadcastLatest();
         return newBlock;
@@ -204,12 +204,12 @@ const generatenextBlockWithTransaction = (receiverAddress: string, amount: numbe
     return generateRawNextBlock(blockData);
 };
 
-const findBlock = (index: number, previousHash: string, timestamp: number, data: Transaction[], difficulty: number): Block => {
+const findBlock = (index: number, previousHash: string, timestamp: number, data: Transaction[], difficulty: number,pouw: string): Block => {
     let nonce = 0;
     while (true) {
-        const hash: string = calculateHash(index, previousHash, timestamp, data, difficulty, nonce);
+        const hash: string = calculatepouwHash(index, previousHash, timestamp, data, difficulty, nonce, pouw);
         if (hashMatchesDifficulty(hash, difficulty)) {
-            return new Block(index, hash, previousHash, timestamp, data, difficulty, nonce,'');
+            return new Block(index, hash, previousHash, timestamp, data, difficulty, nonce, pouw);
         }
         nonce++;
     }
@@ -227,11 +227,8 @@ const sendTransaction = (address: string, amount: number): Transaction => {
 };
 
 const calculateHashForBlock = (block: Block): string =>
-    calculateHash(block.index, block.previousHash, block.timestamp, block.data, block.difficulty, block.nonce);
+    calculatepouwHash(block.index, block.previousHash, block.timestamp, block.data, block.difficulty, block.nonce, block.pouw);
 
-const calculateHash = (index: number, previousHash: string, timestamp: number, data: Transaction[],
-                       difficulty: number, nonce: number): string =>
-    CryptoJS.SHA256(index + previousHash + timestamp + data + difficulty + nonce).toString();
 
 const calculatepouwHash = (index: number, previousHash: string, timestamp: number, data: Transaction[],
                        difficulty: number, nonce: number,pouw: string): string =>

@@ -130,7 +130,7 @@ const generatePouwNextBlock = (message: Message ) => {
         '    -v "/Users/nmsmacpro/asylo-examples":/opt/my-project \\\n' +
         '    -w /opt/my-project \\\n' +
         '    gcr.io/asylo-framework/asylo \\\n' +
-        '    bazel run --config=enc-sim //quickstart -- --message="'+params+','+getDifficulty(getBlockchain())+'"', (err, stdout, stderr) => {
+        '    bazel run --config=enc-sim //quickstart -- --message="'+getDifficulty(getBlockchain())+'"', (err, stdout, stderr) => {
         console.log(stdout);
         let returnInf: string[] = stdout.toString().split(';');
         result = returnInf[0];

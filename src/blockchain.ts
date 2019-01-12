@@ -118,9 +118,9 @@ const generatePouwNextBlock = (message: Message ) => {
     let params: string = information[1];
     let address: string = information[0];
 
-    let pouw;
-    let result;
-    let ncount;
+    let pouw = "";
+    let result = "";
+    let ncount = "";
     //任务执行过程
     console.log(message);
     console.log(getDifficulty(getBlockchain()));
@@ -132,50 +132,51 @@ const generatePouwNextBlock = (message: Message ) => {
         '    gcr.io/asylo-framework/asylo \\\n' +
         '    bazel run --config=enc-sim //quickstart -- --message="'+params+','+getDifficulty(getBlockchain())+'"', (err, stdout, stderr) => {
         console.log(stdout);
-
         let returnInf: string[] = stdout.toString().split(';');
         result = returnInf[0];
         pouw = returnInf[1];
         ncount = returnInf[2];
-    });
+        let runTime = "";
+        runTime = returnInf[3];
+        console.log("Time: "+runTime);
+        //根据计算的时间复杂度进行付费 发送交易的记录变量是address
 
-    //根据计算的时间复杂度进行付费 发送交易的记录变量是address
+        if(pouw == "FAILED"){
 
-    if(pouw == "FAILED"){
+            //Do nothing
 
-        //Do nothing
+        }
+        else {
+            //生成coinbase奖励区块
+            const previousBlock: Block = getLatestBlock();
+            const nextIndex: number = previousBlock.index + 1;
+            const nextTimestamp: number = getCurrentTimestamp();
+            const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
+            const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, [coinbaseTx], getDifficulty(getBlockchain()), 0, pouw);
+            const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, [coinbaseTx], getDifficulty(getBlockchain()), 0,pouw);
+            if (addBlockToChain(newBlock)) {
+                broadcastLatest();
+                //return newBlock;
+            } else {
+                //return null;
+            }
 
-    }
-    else {
-        //生成coinbase奖励区块
-        const previousBlock: Block = getLatestBlock();
-        const nextIndex: number = previousBlock.index + 1;
-        const nextTimestamp: number = getCurrentTimestamp();
-        const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
-        const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, [coinbaseTx], getDifficulty(getBlockchain()), 0,pouw);
-        const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, [coinbaseTx], getDifficulty(getBlockchain()), 0,pouw);
-        if (addBlockToChain(newBlock)) {
-            broadcastLatest();
-            return newBlock;
-        } else {
-            return null;
         }
 
-    }
-
-    //任务结果返还给用户，以及执行任务矿工节点的公钥
-    getSockets().map((s: any) => {
-        //console.log(s._socket.remoteAddress);
-        let ip;
-        if (s._socket.remoteAddress.substr(0, 7) == "::ffff:") {
-            ip = s._socket.remoteAddress.substr(7)
-        }
-        if(ip == address){
-            let information : Message = ({'type': MessageType.RESULT, 'data': result+'?'+ncount+'?'+getPublicFromWallet()});
-            console.log(information);
-            console.log(JSON.stringify(information));
-            s.send(JSON.stringify(information));
-        }
+        //任务结果返还给用户，以及执行任务矿工节点的公钥
+        getSockets().map((s: any) => {
+            //console.log(s._socket.remoteAddress);
+            let ip = s._socket.remoteAddress;
+            if (s._socket.remoteAddress.substr(0, 7) == "::ffff:") {
+                ip = s._socket.remoteAddress.substr(7)
+            }
+            if(ip == address){
+                let information : Message = ({'type': MessageType.RESULT, 'data': result+'?'+ncount+'?'+getPublicFromWallet()});
+                console.log(information);
+                console.log(JSON.stringify(information));
+                s.send(JSON.stringify(information));
+            }
+        });
     });
 
 };

@@ -1,4 +1,5 @@
 import {getSockets,Message,MessageType} from './p2p';
+let timeSend;
 class Agent {
 
     public nodeCounts: number;
@@ -73,6 +74,8 @@ class Agent {
      * @param params
      */
     public schedulerTask = (address: string,taskName: string, params: string): void =>{
+        timeSend=new Date().getTime();
+        console.log("now time= "+timeSend);
         let nodes: string[]=this.TaskNodeList[taskName];
         console.log(nodes);
         let index: string=nodes[0];
@@ -80,7 +83,7 @@ class Agent {
         //scheduling tasks in order
         getSockets().map((s: any) => {
             //console.log(s._socket.remoteAddress);
-            let ip;
+            let ip = s._socket.remoteAddress;
             if (s._socket.remoteAddress.substr(0, 7) == "::ffff:") {
                 ip = s._socket.remoteAddress.substr(7)
             }
@@ -108,4 +111,4 @@ class Agent {
 
 }
 
-export {Agent};
+export {Agent,timeSend};

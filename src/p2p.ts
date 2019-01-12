@@ -6,6 +6,7 @@ import {
 } from './blockchain';
 import {Transaction} from './transaction';
 import {getTransactionPool} from './transactionPool';
+import {timeSend} from './Agent';
 
 
 const sockets: WebSocket[] = [];
@@ -113,8 +114,12 @@ const initMessageHandler = (ws: WebSocket) => {
                     let returnRes: string = returnMes[0];
                     let returnPK: string = returnMes[2];
                     console.log(returnRes);//将返还结果进行打印
-                    sendTransaction(returnPK,Math.ceil(parseInt(returnCount)/100));
-
+                    let timeReceived;
+                    timeReceived=new Date().getTime();
+                    console.log("return time= "+timeReceived);
+                    console.log("execution time= "+ (parseInt(timeReceived)-parseInt(timeSend)));
+                    //sendTransaction(returnPK,Math.ceil(parseInt(returnCount)/100));
+                    sendTransaction(returnPK,10);
 
                     break;
                 case MessageType.FILE_TASK:

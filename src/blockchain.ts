@@ -32,7 +32,7 @@ class Block {
         this.pouw=pouw;
     }
 }
-
+//创世交易
 const genesisTransaction = {
     'txIns': [{'signature': '', 'txOutId': '', 'txOutIndex': 0}],
     'txOuts': [{
@@ -41,11 +41,11 @@ const genesisTransaction = {
     }],
     'id': 'e655f6a5f26dc9b4cac6e46f52336428287759cf81ef5ff10854f69d68f43fa3'
 };
-
+//创世块
 const genesisBlock: Block = new Block(
     0, '91a73664bc84c0baa1fc75ea6e4aa6d1d20c5df664c724e3159aefc2e1186627', '', 1465154705, [genesisTransaction], 0, 0, ''
 );
-
+//区块链
 let blockchain: Block[] = [genesisBlock];
 
 // the unspent txOut of genesis block is set to unspentTxOuts on startup
@@ -66,7 +66,7 @@ const getLatestBlock = (): Block => blockchain[blockchain.length - 1];
 // in seconds
 const BLOCK_GENERATION_INTERVAL: number = 10;
 
-// in blocks
+// in blocks 十个块调整一次难度值
 const DIFFICULTY_ADJUSTMENT_INTERVAL: number = 10;
 
 const getDifficulty = (aBlockchain: Block[]): number => {
@@ -78,6 +78,7 @@ const getDifficulty = (aBlockchain: Block[]): number => {
     }
 };
 
+//TODO 动态调整难度值没有使用？？？
 const getAdjustedDifficulty = (latestBlock: Block, aBlockchain: Block[]) => {
     const prevAdjustmentBlock: Block = aBlockchain[blockchain.length - DIFFICULTY_ADJUSTMENT_INTERVAL];
     const timeExpected: number = BLOCK_GENERATION_INTERVAL * DIFFICULTY_ADJUSTMENT_INTERVAL;
@@ -92,7 +93,10 @@ const getAdjustedDifficulty = (latestBlock: Block, aBlockchain: Block[]) => {
 };
 
 const getCurrentTimestamp = (): number => Math.round(new Date().getTime() / 1000);
-
+/**
+ * 生成新的区块
+ * @param blockData
+ */
 const generateRawNextBlock = (blockData: Transaction[]) => {
     const previousBlock: Block = getLatestBlock();
     const difficulty: number = 0;
@@ -127,18 +131,21 @@ const generatePouwNextBlock = (message: Message ) => {
     const { exec } = require('child_process');
     exec('docker run  --rm \\\n' +
         '    -v bazel-cache:/root/.cache/bazel \\\n' +
-        '    -v "/Users/nmsmacpro/asylo-examples":/opt/my-project \\\n' +
+        '    -v "/Users/shijiuchen1996/asylo-examples":/opt/my-project \\\n' +
         '    -w /opt/my-project \\\n' +
         '    gcr.io/asylo-framework/asylo \\\n' +
         '    bazel run --config=enc-sim //quickstart -- --message="'+getDifficulty(getBlockchain())+'"', (err, stdout, stderr) => {
-        console.log(stdout);
+        console.log("stdout="+stdout);
         let returnInf: string[] = stdout.toString().split(';');
-        result = returnInf[0];
-        pouw = returnInf[1];
+        pouw = returnInf[0];
+        result = returnInf[1];
         ncount = returnInf[2];
         let runTime = "";
         runTime = returnInf[3];
-        console.log("Time: "+runTime);
+        console.log("pouw= "+pouw);
+        console.log("result= "+result);
+        console.log("ncount= "+ncount);
+        console.log("runTime= "+runTime);
         //根据计算的时间复杂度进行付费 发送交易的记录变量是address
 
         if(pouw == "FAILED"){
@@ -152,8 +159,9 @@ const generatePouwNextBlock = (message: Message ) => {
             const nextIndex: number = previousBlock.index + 1;
             const nextTimestamp: number = getCurrentTimestamp();
             const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
-            const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, [coinbaseTx], getDifficulty(getBlockchain()), 0, pouw);
-            const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, [coinbaseTx], getDifficulty(getBlockchain()), 0,pouw);
+            const blockData: Transaction[] = [coinbaseTx].concat(getTransactionPool());
+            const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0, pouw);
+            const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0,pouw);
             if (addBlockToChain(newBlock)) {
                 broadcastLatest();
                 //return newBlock;
@@ -204,7 +212,15 @@ const generatenextBlockWithTransaction = (receiverAddress: string, amount: numbe
     const blockData: Transaction[] = [coinbaseTx, tx];
     return generateRawNextBlock(blockData);
 };
-
+/**
+ * POW共识挖矿
+ * @param index
+ * @param previousHash
+ * @param timestamp
+ * @param data
+ * @param difficulty
+ * @param pouw
+ */
 const findBlock = (index: number, previousHash: string, timestamp: number, data: Transaction[], difficulty: number,pouw: string): Block => {
     let nonce = 0;
     while (true) {
@@ -269,7 +285,7 @@ const getAccumulatedDifficulty = (aBlockchain: Block[]): number => {
         .map((difficulty) => Math.pow(2, difficulty))
         .reduce((a, b) => a + b);
 };
-
+//TODO  时间戳？
 const isValidTimestamp = (newBlock: Block, previousBlock: Block): boolean => {
     return ( previousBlock.timestamp - 60 < newBlock.timestamp )
         && newBlock.timestamp - 60 < getCurrentTimestamp();
@@ -348,7 +364,10 @@ const addBlockToChain = (newBlock: Block): boolean => {
     }
     return false;
 };
-
+/**
+ * 区块链更新，比较链的总难度值，难度值和最大的即为主链
+ * @param newBlocks
+ */
 const replaceChain = (newBlocks: Block[]) => {
     const aUnspentTxOuts = isValidChain(newBlocks);
     const validChain: boolean = aUnspentTxOuts !== null;

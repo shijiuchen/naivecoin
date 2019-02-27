@@ -4,81 +4,134 @@ class Agent {
 
     public nodeCounts: number;
 
-    public nodeAdd: string[];
+    public address: string[];//注册矿工地址列表
 
-    public nodeCPU: number[];
+    // public nodeAdd: string[];
+    //
+    // public nodeCPU: number[];
+    //
+    // public nodeMEM: number[];
 
-    public nodeMEM: number[];
+    // public index: string;
 
-    public index: string;
+    public nodeResourcesList: Map<string,number[]>;//注册节点资源数组
 
     public TaskNodeList: Map<string,string[]>;
 
-    constructor(nodeCounts: number, nodeAdd: string[],TaskNodeList: Map<string,string[]>,index: string,nodeCPU: number[],nodeMEM: number[]){
+    public TaskDockerList: Map<string,string>;  //任务标识对应的docker地址
+
+    constructor(nodeCounts: number, address:string[], nodeResourcesList: Map<string,number[]>,TaskNodeList: Map<string,string[]>,TaskDockerList: Map<string,string>){
         this.nodeCounts=nodeCounts;
-        this.nodeAdd=nodeAdd;
+        this.address=address;
+        this.nodeResourcesList=nodeResourcesList;
+        // this.nodeAdd=nodeAdd;
         this.TaskNodeList=TaskNodeList;
-        this.index=index;
-        this.nodeCPU=nodeCPU;
-        this.nodeMEM=nodeMEM;
+        // this.index=index;
+        // this.nodeCPU=nodeCPU;
+        // this.nodeMEM=nodeMEM;
+        this.TaskDockerList=TaskDockerList;
     }
 
     /**
-     * register resources
-     * @param newPeer
-     * @param cpu
-     * @param mem
+     * 注册资源
+     * @param newPeer 新的对等方的IP地址
+     * @param cpu     闲置cpu
+     * @param mem     闲置内存
+     * TODO 每一分钟主动向agent进行注册更新
      */
-    public register = (newPeer: string,cpu: number,mem: number): void =>{
-        this.nodeAdd[this.nodeCounts]=newPeer;
-        this.nodeCPU[this.nodeCounts]=cpu;
-        this.nodeMEM[this.nodeCounts]=mem;
-        console.log(this.nodeAdd[this.nodeCounts]);
-        console.log(this.nodeCPU[this.nodeCounts]);
-        console.log(this.nodeMEM[this.nodeCounts]);
-        this.nodeCounts++;
+    public register = (newPeer: string,cpu: string,mem: string): void =>{
+        this.address.push(newPeer);
+        let nodes=[parseInt(cpu),parseInt(mem)];
+       this.nodeResourcesList[newPeer]=nodes;
+       console.log(this.address);
+       console.log("nodeResourcesList="+JSON.stringify(this.nodeResourcesList));
+       // console.log(newPeer);
+       // console.log(this.nodeResourcesList[newPeer]);
     }
 
     /**
-     * TODO bullshit
-     * deployTask
-     * @param codefile
-     * @param requstcpu
-     * @param requestmem
+     * 应用发布商发布计算任务 （目前将任务部署到出了发布者的所有链中其他节点）
+     * @param address   应用发布商IP
+     * @param taskName   任务标识
+     * @param dockerAdd   任务需要的虚拟化容器地址
+     * TODO 选节点进行部署
      */
-    public deployTask = (address: string, taskName: string): void=>{
+    public deployTask = (addr: string, taskName: string, dockerAdd: string): void=>{
         let nodes: string[]=[];
-        let index: number=0;
-        getSockets().map((s: any) => {
-            //console.log(s._socket.remoteAddress);
-            let ip;
-            if (s._socket.remoteAddress.substr(0, 7) == "::ffff:") {
-                ip = s._socket.remoteAddress.substr(7)
+        this.address.map((s: any) => {
+            // console.log(s._socket.remoteAddress);
+            // let ip;
+            // if (s._socket.remoteAddress.substr(0, 7) == "::ffff:") {
+            //     ip = s._socket.remoteAddress.substr(7)
+            // }else{
+            //     ip=s._socket.remoteAddress;
+            // }
+            if(s!=addr){
+                nodes.push(s);
             }
-            if(ip!=address){
-                nodes.push(ip);
-                if(index==0)
-                    nodes.push(ip);
-            }
-            index++;
         });
          console.log(nodes);
         this.TaskNodeList[taskName]=nodes;
+        this.TaskDockerList[taskName]=dockerAdd;
          console.log(this.TaskNodeList);
+         console.log(this.TaskDockerList);
     }
 
     /**
-     * schedulertasks
-     * @param address 发布计算任务节点的ip地址
-     * @param taskName
-     * @param params
+     * 具体用户根据任务发布者提供的任务类型发布具体任务
+     * @param address  发布任务的用户IP
+     * @param taskName  使用的任务标识
+     * @param params   执行需要的参数（可以不需要）
+     * @param reqCPU   请求CPU资源(cores）
+     * @param reqMEM    请求MEM资源（MB）
+     * @param estiTime  预计请求时间(s)
      */
-    public schedulerTask = (address: string,taskName: string, params: string): void =>{
+    public schedulerTask = (address: string,taskName: string, params: string, reqCPU: string, reqMEM: string, estiTime: string): void =>{
         timeSend=new Date().getTime();
         console.log("now time= "+timeSend);
         let nodes: string[]=this.TaskNodeList[taskName];
         console.log(nodes);
-        let index: string=nodes[0];
+
+        //scheduler algorithm
+        //预选可以满足要求的节点
+
+        let preResult=nodes.filter(item=>{
+            if(this.nodeResourcesList[item][0] >= parseInt(reqCPU) && this.nodeResourcesList[item][1] >= parseInt(reqMEM)){
+                return true;
+            }else{
+                return false;
+            }
+        });
+
+        console.log("preResult="+preResult);
+
+        //根据CPU、MEM闲置量决定选择调度的节点
+
+        let chosen=0;
+        preResult.forEach((item,index)=>{
+            if(index!=preResult.length-1){
+                let CPU1=this.nodeResourcesList[item].CPU;
+                let MEM1=this.nodeResourcesList[item].MEM;
+                let CPU2=this.nodeResourcesList[preResult[index+1]].CPU;
+                let MEM2=this.nodeResourcesList[preResult[index+1]].MEM;
+                if(CPU1 >= CPU2 && MEM1 >= MEM2){
+                    chosen=index;
+                }else if(CPU1 <= CPU2 && MEM1 <= MEM2){
+                    chosen=index+1;
+                }else{
+                    let param1=parseFloat(CPU1)/parseFloat(MEM1);
+                    let param2=parseFloat(CPU2)/parseFloat(MEM2);
+                    let param3=parseFloat(reqCPU)/parseFloat(reqMEM);
+                    if(Math.abs(param1-param3)<=Math.abs(param2-param3)){
+                        chosen=index;
+                    }else{
+                        chosen=index+1;
+                    }
+                }
+            }
+        });
+
+        let index: string=preResult[chosen];
         // console.log(nodes);
         //scheduling tasks in order
         getSockets().map((s: any) => {
@@ -94,18 +147,18 @@ class Agent {
                 s.send(JSON.stringify(information));
             }
         });
-
-        let i: number = 1;
-        for(; i < nodes.length; i++){
-            if(nodes[i] == index){
-                break;
-            }
-        }
-        ++i;
-        if(i >= nodes.length)
-            i=1;
-        nodes[0] = nodes[i];
-
+        //
+        // let i: number = 1;
+        // for(; i < nodes.length; i++){
+        //     if(nodes[i] == index){
+        //         break;
+        //     }
+        // }
+        // ++i;
+        // if(i >= nodes.length)
+        //     i=1;
+        // nodes[0] = nodes[i];
+        //
 
     }
 

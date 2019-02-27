@@ -13,8 +13,11 @@ import {Agent} from './agent';
 
 const httpPort: number = parseInt(process.env.HTTP_PORT) || 3001;
 const p2pPort: number = parseInt(process.env.P2P_PORT) || 6001;
-let map=new Map<string,string[]>();
-const agent: Agent=new Agent(0,[],map,null,[],[]);//初始化agent
+let map1=new Map<string,number[]>();
+let map2=new Map<string,string[]>();
+let map3=new Map<string,string>();
+//nodeResourcesList: Map<string,number[]>,TaskNodeList: Map<string,string[]>,TaskDockerList: Map<string,string>
+const agent: Agent=new Agent(0,[],map1,map2,map3);//初始化agent
 const initHttpServer = (myHttpPort: number) => {
     const app = express();
     app.use(bodyParser.json());
@@ -134,12 +137,12 @@ const initHttpServer = (myHttpPort: number) => {
     });
 
     app.post('/deployTask', (req, res) => {
-        agent.deployTask(req.body.address, req.body.taskName);
+        agent.deployTask(req.body.address, req.body.taskName, req.body.dockerAdd);
         res.send();
     });
 
     app.post('/schedulerTask', (req, res) => {
-        agent.schedulerTask(req.body.address,req.body.taskName,req.body.params);//将调用发布任务接口的节点ip进行传送
+        agent.schedulerTask(req.body.address,req.body.taskName,req.body.params,req.body.reqCPU,req.body.reqMEM,req.body.eltiTime);//将调用发布任务接口的节点ip进行传送
         res.send();
     });
 

@@ -109,7 +109,7 @@ const validateBlockTransactions = (aTransactions: Transaction[], aUnspentTxOuts:
     }
 
     // all but coinbase transactions
-    const normalTransactions: Transaction[] = aTransactions.slice(1);
+    const normalTransactions: Transaction[] = aTransactions.slice(1);//选取除了0（coinbase交易）的所有交易
     return normalTransactions.map((tx) => validateTransaction(tx, aUnspentTxOuts))
         .reduce((a, b) => (a && b), true);
 

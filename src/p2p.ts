@@ -6,9 +6,9 @@ import {
 } from './blockchain';
 import {Transaction} from './transaction';
 import {getTransactionPool} from './transactionPool';
-import {timeSend} from './Agent';
+import {timeSend} from './agent';
 
-
+//一个节点连接就有一个socket
 const sockets: WebSocket[] = [];
 
 enum MessageType {
@@ -113,13 +113,17 @@ const initMessageHandler = (ws: WebSocket) => {
                     let returnCount: string = returnMes[1];
                     let returnRes: string = returnMes[0];
                     let returnPK: string = returnMes[2];
-                    console.log(returnRes);//将返还结果进行打印
+                    let amount=Math.trunc(Math.cbrt(parseInt(returnCount)));
+                    console.log("returnRes=");//将返还结果进行打印
+                    console.log("returnCount="+returnCount);
+                    console.log("returnPK="+returnPK);
+                    console.log("amount="+amount);
                     let timeReceived;
                     timeReceived=new Date().getTime();
                     console.log("return time= "+timeReceived);
                     console.log("execution time= "+ (parseInt(timeReceived)-parseInt(timeSend)));
                     //sendTransaction(returnPK,Math.ceil(parseInt(returnCount)/100));
-                    sendTransaction(returnPK,10);
+                    sendTransaction(returnPK,amount);
 
                     break;
                 case MessageType.FILE_TASK:
@@ -165,7 +169,10 @@ const initErrorHandler = (ws: WebSocket) => {
     ws.on('close', () => closeConnection(ws));
     ws.on('error', () => closeConnection(ws));
 };
-
+/**
+ * 同步区块链
+ * @param receivedBlocks
+ */
 const handleBlockchainResponse = (receivedBlocks: Block[]) => {
     if (receivedBlocks.length === 0) {
         console.log('received block chain size of 0');

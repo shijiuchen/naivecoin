@@ -68,7 +68,7 @@ class Agent {
             // }
             if(s!=addr){
                 nodes.push(s);
-            }
+             }
         });
          console.log(nodes);
         this.TaskNodeList[taskName]=nodes;
@@ -110,18 +110,27 @@ class Agent {
         let chosen=0;
         preResult.forEach((item,index)=>{
             if(index!=preResult.length-1){
-                let CPU1=this.nodeResourcesList[item].CPU;
-                let MEM1=this.nodeResourcesList[item].MEM;
-                let CPU2=this.nodeResourcesList[preResult[index+1]].CPU;
-                let MEM2=this.nodeResourcesList[preResult[index+1]].MEM;
+                let CPU1=this.nodeResourcesList[item][0];
+                console.log("CPU1="+CPU1);
+                let MEM1=this.nodeResourcesList[item][1];
+                console.log("MEM1="+MEM1);
+                let CPU2=this.nodeResourcesList[preResult[index+1]][0];
+                console.log("CPU2="+CPU2);
+                let MEM2=this.nodeResourcesList[preResult[index+1]][1];
+                console.log("MEM2="+MEM2);
                 if(CPU1 >= CPU2 && MEM1 >= MEM2){
                     chosen=index;
                 }else if(CPU1 <= CPU2 && MEM1 <= MEM2){
                     chosen=index+1;
                 }else{
                     let param1=parseFloat(CPU1)/parseFloat(MEM1);
+                    console.log("param1="+param1);
                     let param2=parseFloat(CPU2)/parseFloat(MEM2);
+                    console.log("param2="+param2);
                     let param3=parseFloat(reqCPU)/parseFloat(reqMEM);
+                    console.log("param3="+param3);
+                    console.log("Math.abs(param1-param3)="+Math.abs(param1-param3));
+                    console.log("Math.abs(param2-param3)="+Math.abs(param2-param3));
                     if(Math.abs(param1-param3)<=Math.abs(param2-param3)){
                         chosen=index;
                     }else{
@@ -129,9 +138,11 @@ class Agent {
                     }
                 }
             }
+            console.log("chosen="+chosen);
         });
 
         let index: string=preResult[chosen];
+        console.log("chose="+preResult[chosen]);
         // console.log(nodes);
         //scheduling tasks in order
         getSockets().map((s: any) => {
@@ -140,6 +151,7 @@ class Agent {
             if (s._socket.remoteAddress.substr(0, 7) == "::ffff:") {
                 ip = s._socket.remoteAddress.substr(7)
             }
+            console.log("ip="+ip);
             if(ip==index){
                 let information : Message = ({'type': MessageType.GET_PARAM, 'data': address+':'+params});//在message中增加发送请求节点IP
                 console.log(information);

@@ -40,7 +40,9 @@ class Agent {
      * TODO 每一分钟主动向agent进行注册更新
      */
     public register = (newPeer: string,cpu: string,mem: string): void =>{
-        this.address.push(newPeer);
+        if(!this.address.indexOf(newPeer)){
+            this.address.push(newPeer);
+        }
         let nodes=[parseInt(cpu),parseInt(mem)];
        this.nodeResourcesList[newPeer]=nodes;
        console.log(this.address);

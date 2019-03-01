@@ -107,11 +107,12 @@ const initHttpServer = (myHttpPort: number) => {
         try {
             const address = req.body.address;
             const amount = req.body.amount;
+            const isLOCK = req.body.isLOCK;
 
             if (address === undefined || amount === undefined) {
                 throw Error('invalid address or amount');
             }
-            const resp = sendTransaction(address, amount);
+            const resp = sendTransaction(address, amount, isLOCK);
             res.send(resp);
         } catch (e) {
             console.log(e.message);
@@ -142,7 +143,7 @@ const initHttpServer = (myHttpPort: number) => {
     });
 
     app.post('/schedulerTask', (req, res) => {
-        agent.schedulerTask(req.body.address,req.body.taskName,req.body.params,req.body.reqCPU,req.body.reqMEM,req.body.eltiTime);//将调用发布任务接口的节点ip进行传送
+        agent.requestUTXOlock(req.body.address,req.body.taskName,req.body.params,req.body.reqCPU,req.body.reqMEM,req.body.eltiTime);//将调用发布任务接口的节点ip进行传送
         res.send();
     });
 
@@ -159,3 +160,4 @@ const initHttpServer = (myHttpPort: number) => {
 initHttpServer(httpPort);
 initP2PServer(p2pPort);
 initWallet();
+export {agent};

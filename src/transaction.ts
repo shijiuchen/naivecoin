@@ -11,12 +11,14 @@ class UnspentTxOut {
     public readonly txOutIndex: number;
     public readonly address: string;
     public readonly amount: number;
+    public readonly LOCK: boolean;//增加字段该笔UTXO是否被锁定
 
-    constructor(txOutId: string, txOutIndex: number, address: string, amount: number) {
+    constructor(txOutId: string, txOutIndex: number, address: string, amount: number, LOCK: boolean) {
         this.txOutId = txOutId;
         this.txOutIndex = txOutIndex;
         this.address = address;
         this.amount = amount;
+        this.LOCK=LOCK;
     }
 }
 
@@ -29,10 +31,12 @@ class TxIn {
 class TxOut {
     public address: string;
     public amount: number;
+    public readonly LOCK: boolean;//增加字段该笔UTXO是否被锁定
 
-    constructor(address: string, amount: number) {
+    constructor(address: string, amount: number, LOCK: boolean) {
         this.address = address;
         this.amount = amount;
+        this.LOCK=LOCK;
     }
 }
 
@@ -191,7 +195,7 @@ const getCoinbaseTransaction = (address: string, blockIndex: number): Transactio
     txIn.txOutIndex = blockIndex;
 
     t.txIns = [txIn];
-    t.txOuts = [new TxOut(address, COINBASE_AMOUNT)];
+    t.txOuts = [new TxOut(address, COINBASE_AMOUNT, false)];
     t.id = getTransactionId(t);
     return t;
 };
@@ -222,14 +226,14 @@ const signTxIn = (transaction: Transaction, txInIndex: number,
 const updateUnspentTxOuts = (aTransactions: Transaction[], aUnspentTxOuts: UnspentTxOut[]): UnspentTxOut[] => {
     const newUnspentTxOuts: UnspentTxOut[] = aTransactions
         .map((t) => {
-            return t.txOuts.map((txOut, index) => new UnspentTxOut(t.id, index, txOut.address, txOut.amount));
+            return t.txOuts.map((txOut, index) => new UnspentTxOut(t.id, index, txOut.address, txOut.amount,txOut.LOCK));
         })
         .reduce((a, b) => a.concat(b), []);
 
     const consumedTxOuts: UnspentTxOut[] = aTransactions
         .map((t) => t.txIns)
         .reduce((a, b) => a.concat(b), [])
-        .map((txIn) => new UnspentTxOut(txIn.txOutId, txIn.txOutIndex, '', 0));
+        .map((txIn) => new UnspentTxOut(txIn.txOutId, txIn.txOutIndex, '', 0, false));
 
     const resultingUnspentTxOuts = aUnspentTxOuts
         .filter(((uTxO) => !findUnspentTxOut(uTxO.txOutId, uTxO.txOutIndex, consumedTxOuts)))
@@ -287,6 +291,9 @@ const isValidTxOutStructure = (txOut: TxOut): boolean => {
         return false;
     } else if (typeof txOut.amount !== 'number') {
         console.log('invalid amount type in txOut');
+        return false;
+    }else if(typeof txOut.LOCK !== 'boolean'){//对于TxOut结构增加判断，判断是否是boolean类型
+        console.log('invalid LOCK type in txOut');
         return false;
     } else {
         return true;

@@ -2,11 +2,12 @@ import * as WebSocket from 'ws';
 import {Server} from 'ws';
 import {
     addBlockToChain, Block, getBlockchain, getLatestBlock, handleReceivedTransaction, isValidBlockStructure,
-    replaceChain, getDifficulty, generatePouwNextBlock, sendTransaction
+    replaceChain, getDifficulty, generatePouwNextBlock, sendTransaction, getAccountBalance
 } from './blockchain';
 import {Transaction} from './transaction';
 import {getTransactionPool} from './transactionPool';
 import {timeSend} from './agent';
+import {agent} from "./main";
 
 //一个节点连接就有一个socket
 const sockets: WebSocket[] = [];
@@ -19,6 +20,8 @@ enum MessageType {
     RESPONSE_TRANSACTION_POOL = 4,
     GET_PARAM = 5,
     RESULT = 6,
+    REQUEST_UTXO_LOCK=7,
+    UTXO_LOCK_SUCCESS=8,
     FILE_TASK = 10
 }
 
@@ -123,7 +126,64 @@ const initMessageHandler = (ws: WebSocket) => {
                     console.log("return time= "+timeReceived);
                     console.log("execution time= "+ (parseInt(timeReceived)-parseInt(timeSend)));
                     //sendTransaction(returnPK,Math.ceil(parseInt(returnCount)/100));
-                    sendTransaction(returnPK,amount);
+                    //TODO 进行锁定交易的解锁
+
+
+                    sendTransaction(returnPK,amount,false);
+
+                    break;
+                case MessageType.REQUEST_UTXO_LOCK:
+                    //接受需要锁定的UTXO钱数
+                    let returnInfo: string[] = message.data.toString().split(':');
+                    // address+":"+taskName+":"+reqCPU+":"+reqMEM+":"+estiTime+":"+amount.toString()
+                    let address:string=returnInfo[0];
+                    let taskName:string=returnInfo[1];
+                    let params:string=returnInfo[2];
+                    let reqCPU:string=returnInfo[3];
+                    let reqMEM:string=returnInfo[4];
+                    let estiTime:string=returnInfo[5];
+                    let money:string=returnInfo[6];
+
+
+                    if(getAccountBalance() < parseInt(money)){//钱数不足,发送失败信息
+                        console.log("The estimate amount is "+money);
+                        console.log("Your balance is "+getAccountBalance());
+                        console.log("You don't have enough UTXO to do the job");
+
+                    }else{//钱数足，进行UTXO锁定
+                        //TODO 更改数据结构、找零
+
+
+
+
+                        // 发送找零成功信息
+                        getSockets().map((s: any) => {
+                            //console.log(s._socket.remoteAddress);
+                            let ip = s._socket.remoteAddress;
+                            if (s._socket.remoteAddress.substr(0, 7) == "::ffff:") {
+                                ip = s._socket.remoteAddress.substr(7)
+                            }
+                            console.log("ip="+ip);
+                            if(ip=="192.168.1.38"){//TODO 现在是硬编码 Agent IP 地址
+                                let information : Message = ({'type': MessageType.REQUEST_UTXO_LOCK, 'data': address+":"+taskName+":"+params+":"+reqCPU+":"+reqMEM+":"+estiTime+":"+amount.toString()});//在message中增加发送请求节点IP
+                                console.log(information);
+                                console.log(JSON.stringify(information));
+                                s.send(JSON.stringify(information));
+                            }
+                        });
+                    }
+                    break;
+                case MessageType.UTXO_LOCK_SUCCESS:
+                    let returnAll: string[] = message.data.toString().split(':');
+                    // address+":"+taskName+":"+reqCPU+":"+reqMEM+":"+estiTime+":"+amount.toString()
+                    let Address:string=returnAll[0];
+                    let TaskName:string=returnAll[1];
+                    let Params:string=returnAll[2];
+                    let ReqCPU:string=returnAll[3];
+                    let ReqMEM:string=returnAll[4];
+                    let EstiTime:string=returnAll[5];
+                    let Money:string=returnAll[6];
+                    agent.schedulerTask(Address,TaskName,Params,ReqCPU,ReqMEM,EstiTime,Money);
 
                     break;
                 case MessageType.FILE_TASK:

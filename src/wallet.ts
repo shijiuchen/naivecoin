@@ -76,11 +76,13 @@ const findTxOutsForAmount = (amount: number, myUnspentTxOuts: UnspentTxOut[]) =>
     let currentAmount = 0;
     const includedUnspentTxOuts = [];
     for (const myUnspentTxOut of myUnspentTxOuts) {
-        includedUnspentTxOuts.push(myUnspentTxOut);
-        currentAmount = currentAmount + myUnspentTxOut.amount;
-        if (currentAmount >= amount) {
-            const leftOverAmount = currentAmount - amount;
-            return {includedUnspentTxOuts, leftOverAmount};
+        if(!myUnspentTxOut.LOCK){//如果这笔UTXO并没有被锁定
+            includedUnspentTxOuts.push(myUnspentTxOut);
+            currentAmount = currentAmount + myUnspentTxOut.amount;
+            if (currentAmount >= amount) {
+                const leftOverAmount = currentAmount - amount;
+                return {includedUnspentTxOuts, leftOverAmount};
+            }
         }
     }
     //钱数不足
@@ -95,12 +97,12 @@ const findTxOutsForAmount = (amount: number, myUnspentTxOuts: UnspentTxOut[]) =>
  * @param amount
  * @param leftOverAmount
  */
-const createTxOuts = (receiverAddress: string, myAddress: string, amount, leftOverAmount: number) => {
-    const txOut1: TxOut = new TxOut(receiverAddress, amount);
+const createTxOuts = (receiverAddress: string, myAddress: string, amount, leftOverAmount: number, isLOCK: boolean) => {
+    const txOut1: TxOut = new TxOut(receiverAddress, amount, isLOCK);
     if (leftOverAmount === 0) {
         return [txOut1];
     } else {
-        const leftOverTx = new TxOut(myAddress, leftOverAmount);
+        const leftOverTx = new TxOut(myAddress, leftOverAmount, false);
         return [txOut1, leftOverTx];
     }
 };
@@ -138,10 +140,12 @@ const filterTxPoolTxs = (unspentTxOuts: UnspentTxOut[], transactionPool: Transac
  * @param txPool
  */
 const createTransaction = (receiverAddress: string, amount: number, privateKey: string,
-                           unspentTxOuts: UnspentTxOut[], txPool: Transaction[]): Transaction => {
+                           unspentTxOuts: UnspentTxOut[], txPool: Transaction[], isLOCK: boolean): Transaction => {
 
     console.log('txPool: %s', JSON.stringify(txPool));
     const myAddress: string = getPublicKey(privateKey);
+
+    //从UTXO池中提取自己的所有UTXO
     const myUnspentTxOutsA = unspentTxOuts.filter((uTxO: UnspentTxOut) => uTxO.address === myAddress);
 
     const myUnspentTxOuts = filterTxPoolTxs(myUnspentTxOutsA, txPool);
@@ -160,7 +164,7 @@ const createTransaction = (receiverAddress: string, amount: number, privateKey: 
 
     const tx: Transaction = new Transaction();
     tx.txIns = unsignedTxIns;
-    tx.txOuts = createTxOuts(receiverAddress, myAddress, amount, leftOverAmount);
+    tx.txOuts = createTxOuts(receiverAddress, myAddress, amount, leftOverAmount, isLOCK);
     tx.id = getTransactionId(tx);
 
     tx.txIns = tx.txIns.map((txIn: TxIn, index: number) => {

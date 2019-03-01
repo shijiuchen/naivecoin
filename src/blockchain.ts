@@ -37,7 +37,8 @@ const genesisTransaction = {
     'txIns': [{'signature': '', 'txOutId': '', 'txOutIndex': 0}],
     'txOuts': [{
         'address': '04bfcab8722991ae774db48f934ca79cfb7dd991229153b9f732ba5334aafcd8e7266e47076996b55a14bf9913ee3145ce0cfc1372ada8ada74bd287450313534a',
-        'amount': 50
+        'amount': 50,
+        'LOCK' : false
     }],
     'id': 'e655f6a5f26dc9b4cac6e46f52336428287759cf81ef5ff10854f69d68f43fa3'
 };
@@ -212,7 +213,7 @@ const generatenextBlockWithTransaction = (receiverAddress: string, amount: numbe
         throw Error('invalid amount');
     }
     const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
-    const tx: Transaction = createTransaction(receiverAddress, amount, getPrivateFromWallet(), getUnspentTxOuts(), getTransactionPool());
+    const tx: Transaction = createTransaction(receiverAddress, amount, getPrivateFromWallet(), getUnspentTxOuts(), getTransactionPool(),false);
     const blockData: Transaction[] = [coinbaseTx, tx];
     return generateRawNextBlock(blockData);
 };
@@ -240,8 +241,8 @@ const getAccountBalance = (): number => {
     return getBalance(getPublicFromWallet(), getUnspentTxOuts());
 };
 
-const sendTransaction = (address: string, amount: number): Transaction => {
-    const tx: Transaction = createTransaction(address, amount, getPrivateFromWallet(), getUnspentTxOuts(), getTransactionPool());
+const sendTransaction = (address: string, amount: number, isLOCK: boolean): Transaction => {
+    const tx: Transaction = createTransaction(address, amount, getPrivateFromWallet(), getUnspentTxOuts(), getTransactionPool(),isLOCK);
     addToTransactionPool(tx, getUnspentTxOuts());
     broadCastTransactionPool();
     return tx;

@@ -37,7 +37,7 @@ class Agent {
      * @param newPeer 新的对等方的IP地址
      * @param cpu     闲置cpu
      * @param mem     闲置内存
-     * TODO 每一分钟主动向agent进行注册更新
+     * Done 每30s主动向agent进行注册更新
      */
     public register = (newPeer: string,cpu: string,mem: string): void =>{
         if(!this.address.indexOf(newPeer)){
@@ -88,9 +88,13 @@ class Agent {
      * @param reqMEM    请求MEM资源（MB）
      * @param estiTime  预计请求时间(s)
      */
-    public schedulerTask = (address: string,taskName: string, params: string, reqCPU: string, reqMEM: string, estiTime: string): void =>{
+    public schedulerTask = (address: string,taskName: string, params: string, reqCPU: string, reqMEM: string, estiTime: string, money: string): void =>{
         timeSend=new Date().getTime();
         console.log("now time= "+timeSend);
+        //TODO 调度前对于交易池进行挖矿打包
+
+
+
         let nodes: string[]=this.TaskNodeList[taskName];
         console.log(nodes);
 
@@ -147,6 +151,7 @@ class Agent {
         console.log("chose="+preResult[chosen]);
         // console.log(nodes);
         //scheduling tasks in order
+        //调度到具体矿工节点
         getSockets().map((s: any) => {
             //console.log(s._socket.remoteAddress);
             let ip = s._socket.remoteAddress;
@@ -174,6 +179,48 @@ class Agent {
         // nodes[0] = nodes[i];
         //
 
+
+
+    }
+
+    /**
+     * 预估执行任务需要钱数
+     * @param reqCPU
+     * @param reqMEM
+     * @param estiTime
+     * TODO 查看现有云平台计算价格
+     */
+    public estimateUTXO = (reqCPU: string, reqMEM: string, estiTime: string): number =>{
+        return parseInt(reqCPU)*parseInt(reqMEM)*parseInt(estiTime)/100;
+    }
+    /**
+     * 对于任务发布者进行UTXO锁定请求
+     * @param address
+     * @param taskName
+     * @param params
+     * @param reqCPU
+     * @param reqMEM
+     * @param estiTime
+     */
+    public requestUTXOlock = (address: string,taskName: string, params: string, reqCPU: string, reqMEM: string, estiTime: string): void =>{
+        //估算价格
+        let amount : number=this.estimateUTXO(reqCPU,reqMEM,estiTime);
+        console.log("Agent estimate the amount is:"+amount);
+        //请求锁定UTXO
+        getSockets().map((s: any) => {
+            //console.log(s._socket.remoteAddress);
+            let ip = s._socket.remoteAddress;
+            if (s._socket.remoteAddress.substr(0, 7) == "::ffff:") {
+                ip = s._socket.remoteAddress.substr(7)
+            }
+            console.log("ip="+ip);
+            if(ip==address){
+                let information : Message = ({'type': MessageType.REQUEST_UTXO_LOCK, 'data': address+":"+taskName+":"+params+":"+reqCPU+":"+reqMEM+":"+estiTime+":"+amount.toString()});//在message中增加发送请求节点IP
+                console.log(information);
+                console.log(JSON.stringify(information));
+                s.send(JSON.stringify(information));
+            }
+        });
     }
 
 }

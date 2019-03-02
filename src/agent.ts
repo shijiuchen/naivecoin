@@ -2,7 +2,16 @@ import {broadcastLatest, getSockets, Message, MessageType} from './p2p';
 import {getCoinbaseTransaction, Transaction, TxIn, TxOut} from "./transaction";
 import {getPublicFromWallet} from "./wallet";
 import {getTransactionPool} from "./transactionPool";
-import {addBlockToChain, Block, getBlockchain, getDifficulty, getLatestBlock, calculatepouwHash, getCurrentTimestamp} from "./blockchain";
+import {
+    addBlockToChain,
+    Block,
+    getBlockchain,
+    getDifficulty,
+    getLatestBlock,
+    calculatepouwHash,
+    getCurrentTimestamp,
+    generatePouwNextBlock
+} from "./blockchain";
 import * as _ from "lodash";
 let timeSend;
 class Agent {
@@ -45,7 +54,7 @@ class Agent {
      * Done 每30s主动向agent进行注册更新
      */
     public register = (newPeer: string,cpu: string,mem: string): void =>{
-        if(!this.address.indexOf(newPeer)){
+        if(this.address.indexOf(newPeer) === -1){
             this.address.push(newPeer);
         }
         let nodes=[parseInt(cpu),parseInt(mem)];
@@ -66,7 +75,7 @@ class Agent {
     public deployTask = (addr: string, taskName: string, dockerAdd: string): void=>{
         let nodes: string[]=[];
         this.address.map((s: any) => {
-            // console.log(s._socket.remoteAddress);
+             //console.log(s._socket.remoteAddress);
             // let ip;
             // if (s._socket.remoteAddress.substr(0, 7) == "::ffff:") {
             //     ip = s._socket.remoteAddress.substr(7)
@@ -187,6 +196,7 @@ class Agent {
         // console.log(nodes);
         //scheduling tasks in order
         //调度到具体矿工节点
+            let flag: boolean = false;//用于判断是否自己既是agent、又是任务执行者
         getSockets().map((s: any) => {
             //console.log(s._socket.remoteAddress);
             let ip = s._socket.remoteAddress;
@@ -195,12 +205,20 @@ class Agent {
             }
             console.log("ip="+ip);
             if(ip==index){
+                flag=true;
                 let information : Message = ({'type': MessageType.GET_PARAM, 'data': address+':'+params});//在message中增加发送请求节点IP
                 console.log(information);
                 console.log(JSON.stringify(information));
                 s.send(JSON.stringify(information));
             }
         });
+        console.log("flag="+flag);
+        if(!flag){
+            let information : Message = ({'type': MessageType.GET_PARAM, 'data': address+':'+params});//在message中增加发送请求节点IP
+            console.log(information);
+            console.log(JSON.stringify(information));
+            generatePouwNextBlock(information);
+        }
         }else{
             //Do noting
             //TODO 返回用户相关信息

@@ -147,7 +147,7 @@ const initMessageHandler = (ws: WebSocket) => {
                         sendTransaction(returnPK,amount,false);
                     }else{//清空所有钱并且停掉用户
                         //TODO 将欠款数额，被欠款人地址，欠款人地址发送给agent ，，这种情况不容易出现，暂时不写
-                        let arrears: number = amount=-getAccountBalance();//得到欠款
+                        let arrears: number = amount-getAccountBalance();//得到欠款
                         sendTransaction(returnPK,getAccountBalance(),false);//将账户中所有的钱发给任务执行方
 
                     }
@@ -182,8 +182,8 @@ const initMessageHandler = (ws: WebSocket) => {
                                 ip = s._socket.remoteAddress.substr(7)
                             }
                             console.log("ip="+ip);
-                            if(ip=="192.168.1.38"){//TODO 现在是硬编码 Agent IP 地址
-                                let information : Message = ({'type': MessageType.UTXO_LOCK_SUCCESS, 'data': address+":"+taskName+":"+params+":"+reqCPU+":"+reqMEM+":"+estiTime+":"+amount.toString()});//在message中增加发送请求节点IP
+                            if(ip=="172.20.10.2"){//TODO 现在是硬编码 Agent IP 地址
+                                let information : Message = ({'type': MessageType.UTXO_LOCK_SUCCESS, 'data': address+":"+taskName+":"+params+":"+reqCPU+":"+reqMEM+":"+estiTime+":"+money.toString()});//在message中增加发送请求节点IP
                                 console.log(information);
                                 console.log(JSON.stringify(information));
                                 s.send(JSON.stringify(information));

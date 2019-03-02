@@ -159,7 +159,7 @@ const generatePouwNextBlock = (message: Message ) => {
 
         }
         else {
-            //生成coinbase奖励区块
+            //生成coinbase奖励区块，并挖出之前的交易
             const previousBlock: Block = getLatestBlock();
             const nextIndex: number = previousBlock.index + 1;
             const nextTimestamp: number = getCurrentTimestamp();
@@ -396,5 +396,5 @@ export {
     Block, getBlockchain, getUnspentTxOuts, getLatestBlock, sendTransaction,
     generateRawNextBlock, generateNextBlock, generatenextBlockWithTransaction,
     handleReceivedTransaction, getMyUnspentTransactionOutputs,
-    getAccountBalance, isValidBlockStructure, replaceChain, addBlockToChain,getDifficulty,generatePouwNextBlock
+    getAccountBalance, isValidBlockStructure, replaceChain, addBlockToChain,getDifficulty,generatePouwNextBlock,calculatepouwHash, getCurrentTimestamp,unspentTxOuts
 };

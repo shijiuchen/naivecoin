@@ -11,7 +11,7 @@ class UnspentTxOut {
     public readonly txOutIndex: number;
     public readonly address: string;
     public readonly amount: number;
-    public readonly LOCK: boolean;//增加字段该笔UTXO是否被锁定
+    public LOCK: boolean;//增加字段该笔UTXO是否被锁定
 
     constructor(txOutId: string, txOutIndex: number, address: string, amount: number, LOCK: boolean) {
         this.txOutId = txOutId;
@@ -31,7 +31,7 @@ class TxIn {
 class TxOut {
     public address: string;
     public amount: number;
-    public readonly LOCK: boolean;//增加字段该笔UTXO是否被锁定
+    public LOCK: boolean;//增加字段该笔UTXO是否被锁定
 
     constructor(address: string, amount: number, LOCK: boolean) {
         this.address = address;

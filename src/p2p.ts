@@ -1,13 +1,25 @@
 import * as WebSocket from 'ws';
 import {Server} from 'ws';
 import {
-    addBlockToChain, Block, getBlockchain, getLatestBlock, handleReceivedTransaction, isValidBlockStructure,
-    replaceChain, getDifficulty, generatePouwNextBlock, sendTransaction, getAccountBalance
+    addBlockToChain,
+    Block,
+    getBlockchain,
+    getLatestBlock,
+    handleReceivedTransaction,
+    isValidBlockStructure,
+    replaceChain,
+    getDifficulty,
+    generatePouwNextBlock,
+    sendTransaction,
+    getAccountBalance,
+    getMyUnspentTransactionOutputs,
+    unspentTxOuts
 } from './blockchain';
-import {Transaction} from './transaction';
+import {Transaction, UnspentTxOut} from './transaction';
 import {getTransactionPool} from './transactionPool';
 import {timeSend} from './agent';
 import {agent} from "./main";
+import {getPublicFromWallet} from "./wallet";
 
 //一个节点连接就有一个socket
 const sockets: WebSocket[] = [];
@@ -126,10 +138,19 @@ const initMessageHandler = (ws: WebSocket) => {
                     console.log("return time= "+timeReceived);
                     console.log("execution time= "+ (parseInt(timeReceived)-parseInt(timeSend)));
                     //sendTransaction(returnPK,Math.ceil(parseInt(returnCount)/100));
-                    //TODO 进行锁定交易的解锁
+                    //进行锁定交易的解锁
+                    let pos = unspentTxOuts.findIndex(item => {
+                        return item.LOCK==true && item.address===getPublicFromWallet();//TODO 有点问题
+                    });
+                    if(unspentTxOuts[pos].amount >= amount || getAccountBalance() >= amount){//预估大于实际 或者账户的钱够用,直接解锁
+                        unspentTxOuts[pos].LOCK=false;
+                        sendTransaction(returnPK,amount,false);
+                    }else{//清空所有钱并且停掉用户
+                        //TODO 将欠款数额，被欠款人地址，欠款人地址发送给agent ，，这种情况不容易出现，暂时不写
+                        let arrears: number = amount=-getAccountBalance();//得到欠款
+                        sendTransaction(returnPK,getAccountBalance(),false);//将账户中所有的钱发给任务执行方
 
-
-                    sendTransaction(returnPK,amount,false);
+                    }
 
                     break;
                 case MessageType.REQUEST_UTXO_LOCK:
@@ -151,11 +172,8 @@ const initMessageHandler = (ws: WebSocket) => {
                         console.log("You don't have enough UTXO to do the job");
 
                     }else{//钱数足，进行UTXO锁定
-                        //TODO 更改数据结构、找零
-
-
-
-
+                        //更改数据结构、找零
+                        sendTransaction(getPublicFromWallet(),parseInt(money),true);
                         // 发送找零成功信息
                         getSockets().map((s: any) => {
                             //console.log(s._socket.remoteAddress);
@@ -165,7 +183,7 @@ const initMessageHandler = (ws: WebSocket) => {
                             }
                             console.log("ip="+ip);
                             if(ip=="192.168.1.38"){//TODO 现在是硬编码 Agent IP 地址
-                                let information : Message = ({'type': MessageType.REQUEST_UTXO_LOCK, 'data': address+":"+taskName+":"+params+":"+reqCPU+":"+reqMEM+":"+estiTime+":"+amount.toString()});//在message中增加发送请求节点IP
+                                let information : Message = ({'type': MessageType.UTXO_LOCK_SUCCESS, 'data': address+":"+taskName+":"+params+":"+reqCPU+":"+reqMEM+":"+estiTime+":"+amount.toString()});//在message中增加发送请求节点IP
                                 console.log(information);
                                 console.log(JSON.stringify(information));
                                 s.send(JSON.stringify(information));
@@ -183,6 +201,7 @@ const initMessageHandler = (ws: WebSocket) => {
                     let ReqMEM:string=returnAll[4];
                     let EstiTime:string=returnAll[5];
                     let Money:string=returnAll[6];
+
                     agent.schedulerTask(Address,TaskName,Params,ReqCPU,ReqMEM,EstiTime,Money);
 
                     break;

@@ -1,4 +1,9 @@
-import {getSockets,Message,MessageType} from './p2p';
+import {broadcastLatest, getSockets, Message, MessageType} from './p2p';
+import {getCoinbaseTransaction, Transaction, TxIn, TxOut} from "./transaction";
+import {getPublicFromWallet} from "./wallet";
+import {getTransactionPool} from "./transactionPool";
+import {addBlockToChain, Block, getBlockchain, getDifficulty, getLatestBlock, calculatepouwHash, getCurrentTimestamp} from "./blockchain";
+import * as _ from "lodash";
 let timeSend;
 class Agent {
 
@@ -91,7 +96,37 @@ class Agent {
     public schedulerTask = (address: string,taskName: string, params: string, reqCPU: string, reqMEM: string, estiTime: string, money: string): void =>{
         timeSend=new Date().getTime();
         console.log("now time= "+timeSend);
-        //TODO 调度前对于交易池进行挖矿打包
+
+        //TODO 调度前对于交易池进行挖矿打包,现在是直接生成一个区块，并没有挖矿
+        const previousBlock: Block = getLatestBlock();
+        const nextIndex: number = previousBlock.index + 1;
+        const nextTimestamp: number = getCurrentTimestamp();
+        const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
+        const blockData: Transaction[] = [coinbaseTx].concat(getTransactionPool());
+        const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0, "");
+        const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0,"");
+        if (addBlockToChain(newBlock)) {
+            broadcastLatest();
+            //return newBlock;
+        } else {
+            //return null;
+        }
+        //验证交易锁定情况
+        //aUnspentTxOuts.find((uTxO) => uTxO.txOutId === transactionId && uTxO.txOutIndex === index);
+
+
+        const minedBlock: Block=getLatestBlock();//得到刚刚挖出的块
+        const minedTrans: Transaction[]=minedBlock.data;//得到挖出的交易
+        const minedTxOuts: TxOut[] = _(minedTrans)  //得到挖出的所有TxOuts
+            .map((tx) => tx.txOuts)
+            .flatten()
+            .value();
+        const resTxouts: TxOut=minedTxOuts.find((txout) => txout.LOCK===true && txout.amount===parseInt(money));
+        console.log("resTxouts="+resTxouts);
+        if(resTxouts!=null){//确实存在这笔锁定的TxOut
+
+            console.log("Going into scheduling!");
+
 
 
 
@@ -166,6 +201,10 @@ class Agent {
                 s.send(JSON.stringify(information));
             }
         });
+        }else{
+            //Do noting
+            //TODO 返回用户相关信息
+        }
         //
         // let i: number = 1;
         // for(; i < nodes.length; i++){

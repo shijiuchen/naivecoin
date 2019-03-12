@@ -182,7 +182,7 @@ const initMessageHandler = (ws: WebSocket) => {
                                 ip = s._socket.remoteAddress.substr(7)
                             }
                             console.log("ip="+ip);
-                            if(ip=="172.20.10.2"){//TODO 现在是硬编码 Agent IP 地址
+                            if(ip=="192.168.1.56"){//TODO 现在是硬编码 Agent IP 地址
                                 let information : Message = ({'type': MessageType.UTXO_LOCK_SUCCESS, 'data': address+":"+taskName+":"+params+":"+reqCPU+":"+reqMEM+":"+estiTime+":"+money.toString()});//在message中增加发送请求节点IP
                                 console.log(information);
                                 console.log(JSON.stringify(information));

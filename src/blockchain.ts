@@ -145,7 +145,7 @@ const generatePouwNextBlock = (message: Message ) => {
     const { exec } = require('child_process');
     exec('docker run  --rm \\\n' +
         '    -v bazel-cache:/root/.cache/bazel \\\n' +
-        '    -v "/Users/shijiuchen1996/asylo-examples":/opt/my-project \\\n' +
+        '    -v "/home/syc/asylo-examples":/opt/my-project \\\n' +
         '    -w /opt/my-project \\\n' +
         '    gcr.io/asylo-framework/asylo \\\n' +
         '    bazel run --config=enc-sim //quickstart -- --message="'+getDifficulty(getBlockchain())+'"', (err, stdout, stderr) => {

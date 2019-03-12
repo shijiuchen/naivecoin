@@ -119,10 +119,12 @@ const generateRawNextBlock = (blockData: Transaction[]) => {
 
 /**
  * 延迟函数
- * @param time
+ * @param n
  */
-function sleep (time) {
-    return new Promise((resolve) => setTimeout(resolve, time));
+function sleep(n)
+{
+    var  start=new Date().getTime();
+    while(true) if(new Date().getTime()-start>n)  break;
 }
 /**
  * 执行有用功、生成Pouw区块
@@ -138,20 +140,21 @@ const generatePouwNextBlock = (message: Message ) => {
 
     let pouw = "";
     let result = "";
-    let exeN : number ;
+    let exeN  ;
     //任务执行过程
     console.log(message);
     console.log(getDifficulty(getBlockchain()));
     const { exec } = require('child_process');
     exec('docker run  --rm \\\n' +
         '    -v bazel-cache:/root/.cache/bazel \\\n' +
-        '    -v "/home/syc/asylo-examples":/opt/my-project \\\n' +
+        '    -v "/home/sjc/asylo-examples":/opt/my-project \\\n' +
         '    -w /opt/my-project \\\n' +
         '    gcr.io/asylo-framework/asylo \\\n' +
         '    bazel run --config=enc-sim //quickstart -- --message="'+getDifficulty(getBlockchain())+'"', (err, stdout, stderr) => {
         console.log("stdout="+stdout);
         // let returnInf: string[] = stdout.toString().split(';');
         // pouw = returnInf[0];
+        //执行任务结果
         result = stdout.toString();
         // ncount = returnInf[2];
         // let runTime = "";
@@ -162,26 +165,29 @@ const generatePouwNextBlock = (message: Message ) => {
         // console.log("runTime= "+runTime);
 
         //获取执行的有用功
-        sleep(2000);//延迟两秒，等待写入文件
+        //延迟5秒，等待写入文件
+        sleep(5000);
+        console.log("time out finished!");
 
-        var fs=require('fs');
-        fs.readFile('log/result.txt',function(err,data){
-            if(err)
-                console.log('读取文件时发生错误！');
-            else
-                exeN=parseInt(data.toString());
-        });
+        //读取文件，获得有用功
+        var fs = require('fs');
+        var path="/home/sjc/naivecoin/log/result.txt";
+        exeN = fs.readFileSync(path, "utf8");
         console.log("exeN="+exeN);
+
         //删除有用功记录文件
-        exec('rm /home/syc/naivecoin/log/result.txt');
+        fs.truncate('/home/sjc/naivecoin/log/result.txt', 0, function(){console.log('done')});
 
         //判断是否有出块条件
         if(getDifficulty(getBlockchain()) == 0) {
+
             //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
             const key = ec.keyFromPrivate("d66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex');
             pouw = toHexString(key.sign(result+";SUCCESS").toDER());
             console.log("pouw"+pouw);
+
         } else {
+
             let SRNG1 : number=Math.floor(Math.random()*999+1);
             let SRNG2 : number=1000;
             let EXP : number =  2.718281828;
@@ -189,19 +195,21 @@ const generatePouwNextBlock = (message: Message ) => {
             let parm1 : number = Math.pow(EXP,(exeN/getDifficulty(getBlockchain())));
             let parm2 : number= Math.pow(EXP,-(exeN/getDifficulty(getBlockchain())));
             let Prob : number= (parm1-parm2)/(parm1+parm2);
+
             if(Prob > SRNG) {
+
                 //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
                 const key = ec.keyFromPrivate("d66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex');
                 pouw = toHexString(key.sign(result+";SUCCESS").toDER());
                 console.log("pouw"+pouw);
+
             }
             else {
+
                 pouw = "FAILED";
+
             }
         }
-
-
-
 
         //根据pouw判断是否可以生成区块
         if(pouw == "FAILED"){
@@ -210,6 +218,7 @@ const generatePouwNextBlock = (message: Message ) => {
 
         }
         else {
+
             //生成coinbase奖励区块，并挖出之前的交易
             const previousBlock: Block = getLatestBlock();
             const nextIndex: number = previousBlock.index + 1;
@@ -218,11 +227,16 @@ const generatePouwNextBlock = (message: Message ) => {
             const blockData: Transaction[] = [coinbaseTx].concat(getTransactionPool());
             const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0, pouw);
             const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0,pouw);
+
             if (addBlockToChain(newBlock)) {
+
                 broadcastLatest();
                 //return newBlock;
+
             } else {
+
                 //return null;
+
             }
 
         }
@@ -235,7 +249,7 @@ const generatePouwNextBlock = (message: Message ) => {
                 ip = s._socket.remoteAddress.substr(7)
             }
             if(ip == address){
-                let information : Message = ({'type': MessageType.RESULT, 'data': result+'?'+exeN+'?'+getPublicFromWallet()});
+                let information : Message = ({'type': MessageType.RESULT, 'data': result+'?'+exeN.toString()+'?'+getPublicFromWallet()});
                 console.log(information);
                 console.log(JSON.stringify(information));
                 s.send(JSON.stringify(information));

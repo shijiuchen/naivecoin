@@ -128,7 +128,8 @@ const initMessageHandler = (ws: WebSocket) => {
                     let returnCount: string = returnMes[1];
                     let returnRes: string = returnMes[0];
                     let returnPK: string = returnMes[2];
-                    let amount=Math.trunc(Math.cbrt(parseInt(returnCount)));
+                    // let amount=Math.trunc(Math.cbrt(parseInt(returnCount)));
+                    let amount=parseInt(returnCount);
                     console.log("returnRes=");//将返还结果进行打印
                     console.log("returnCount="+returnCount);
                     console.log("returnPK="+returnPK);

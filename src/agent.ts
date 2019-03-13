@@ -206,7 +206,7 @@ class Agent {
             console.log("ip="+ip);
             if(ip==index){
                 flag=true;
-                let information : Message = ({'type': MessageType.GET_PARAM, 'data': address+':'+params});//在message中增加发送请求节点IP
+                let information : Message = ({'type': MessageType.GET_PARAM, 'data': address+':'+params+':'+taskName});//在message中增加发送请求节点IP
                 console.log(information);
                 console.log(JSON.stringify(information));
                 s.send(JSON.stringify(information));
@@ -214,7 +214,7 @@ class Agent {
         });
         console.log("flag="+flag);
         if(!flag){
-            let information : Message = ({'type': MessageType.GET_PARAM, 'data': address+':'+params});//在message中增加发送请求节点IP
+            let information : Message = ({'type': MessageType.GET_PARAM, 'data': address+':'+params+taskName});//在message中增加发送请求节点IP
             console.log(information);
             console.log(JSON.stringify(information));
             generatePouwNextBlock(information);

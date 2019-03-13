@@ -137,125 +137,245 @@ const generatePouwNextBlock = (message: Message ) => {
     let information: string[]=message.data.toString().split(":");
     let params: string = information[1];
     let address: string = information[0];
+    let taskName: string=information[2];//任务名字
 
     let pouw = "";
     let result = "";
-    let exeN  ;
+    let exeN ;
     //任务执行过程
     console.log(message);
     console.log(getDifficulty(getBlockchain()));
     const { exec } = require('child_process');
-    exec('docker run  --rm \\\n' +
-        '    -v bazel-cache:/root/.cache/bazel \\\n' +
-        '    -v "/home/sjc/asylo-examples":/opt/my-project \\\n' +
-        '    -w /opt/my-project \\\n' +
-        '    gcr.io/asylo-framework/asylo \\\n' +
-        '    bazel run --config=enc-sim //quickstart -- --message="'+getDifficulty(getBlockchain())+'"', (err, stdout, stderr) => {
-        console.log("stdout="+stdout);
-        // let returnInf: string[] = stdout.toString().split(';');
-        // pouw = returnInf[0];
-        //执行任务结果
-        result = stdout.toString();
-        // ncount = returnInf[2];
-        // let runTime = "";
-        // runTime = returnInf[3];
-        // console.log("pouw= "+pouw);
-        console.log("result= "+result);
-        // console.log("ncount= "+ncount);
-        // console.log("runTime= "+runTime);
 
-        //获取执行的有用功
-        //延迟5秒，等待写入文件
-        sleep(5000);
-        console.log("time out finished!");
+    //进行任务类型判断
+    if(taskName === "asylo"){
 
-        //读取文件，获得有用功
-        var fs = require('fs');
-        var path="/home/sjc/naivecoin/log/result.txt";
-        exeN = fs.readFileSync(path, "utf8");
-        console.log("exeN="+exeN);
+        exec('docker run  --rm \\\n' +
+            '    -v bazel-cache:/root/.cache/bazel \\\n' +
+            '    -v "/home/syc/asylo-examples":/opt/my-project \\\n' +
+            '    -w /opt/my-project \\\n' +
+            '    gcr.io/asylo-framework/asylo \\\n' +
+            '    bazel run --config=enc-sim //quickstart -- --message="'+getDifficulty(getBlockchain())+'"', (err, stdout, stderr) => {
+            console.log("stdout="+stdout);
+            // let returnInf: string[] = stdout.toString().split(';');
+            // pouw = returnInf[0];
+            //执行任务结果
+            result = stdout.toString();
+            // ncount = returnInf[2];
+            // let runTime = "";
+            // runTime = returnInf[3];
+            // console.log("pouw= "+pouw);
+            console.log("result= "+result);
+            // console.log("ncount= "+ncount);
+            // console.log("runTime= "+runTime);
 
-        //删除有用功记录文件
-        fs.truncate('/home/sjc/naivecoin/log/result.txt', 0, function(){console.log('done')});
+            //获取执行的有用功
+            //延迟5秒，等待写入文件
+            sleep(5000);
+            console.log("time out finished!");
 
-        //判断是否有出块条件
-        if(getDifficulty(getBlockchain()) == 0) {
+            //读取文件，获得有用功
+            var fs = require('fs');
+            var path="/home/syc/naivecoin/log/result.txt";
+            exeN = fs.readFileSync(path, "utf8");
+            console.log("exeN="+exeN);
 
-            //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
-            const key = ec.keyFromPrivate("d66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex');
-            pouw = toHexString(key.sign(result+";SUCCESS").toDER());
-            console.log("pouw"+pouw);
+            //删除有用功记录文件
+            fs.truncate('/home/syc/naivecoin/log/result.txt', 0, function(){console.log('done')});
 
-        } else {
-
-            let SRNG1 : number=Math.floor(Math.random()*999+1);
-            let SRNG2 : number=1000;
-            let EXP : number =  2.718281828;
-            let SRNG : number = SRNG1 / SRNG2;
-            let parm1 : number = Math.pow(EXP,(exeN/getDifficulty(getBlockchain())));
-            let parm2 : number= Math.pow(EXP,-(exeN/getDifficulty(getBlockchain())));
-            let Prob : number= (parm1-parm2)/(parm1+parm2);
-
-            if(Prob > SRNG) {
+            //判断是否有出块条件
+            if(getDifficulty(getBlockchain()) == 0) {
 
                 //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
                 const key = ec.keyFromPrivate("d66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex');
                 pouw = toHexString(key.sign(result+";SUCCESS").toDER());
                 console.log("pouw"+pouw);
 
+            } else {
+
+                let SRNG1 : number=Math.floor(Math.random()*999+1);
+                let SRNG2 : number=1000;
+                let EXP : number =  2.718281828;
+                let SRNG : number = SRNG1 / SRNG2;
+                let parm1 : number = Math.pow(EXP,(exeN/getDifficulty(getBlockchain())));
+                let parm2 : number= Math.pow(EXP,-(exeN/getDifficulty(getBlockchain())));
+                let Prob : number= (parm1-parm2)/(parm1+parm2);
+
+                if(Prob > SRNG) {
+
+                    //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
+                    const key = ec.keyFromPrivate("d66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex');
+                    pouw = toHexString(key.sign(result+";SUCCESS").toDER());
+                    console.log("pouw"+pouw);
+
+                }
+                else {
+
+                    pouw = "FAILED";
+
+                }
+            }
+
+            //根据pouw判断是否可以生成区块
+            if(pouw == "FAILED"){
+
+                //Do nothing
+
             }
             else {
 
-                pouw = "FAILED";
+                //生成coinbase奖励区块，并挖出之前的交易
+                const previousBlock: Block = getLatestBlock();
+                const nextIndex: number = previousBlock.index + 1;
+                const nextTimestamp: number = getCurrentTimestamp();
+                const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
+                const blockData: Transaction[] = [coinbaseTx].concat(getTransactionPool());
+                const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0, pouw);
+                const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0,pouw);
+
+                if (addBlockToChain(newBlock)) {
+
+                    broadcastLatest();
+                    //return newBlock;
+
+                } else {
+
+                    //return null;
+
+                }
 
             }
-        }
 
-        //根据pouw判断是否可以生成区块
-        if(pouw == "FAILED"){
+            //任务结果返还给用户，以及执行任务矿工节点的公钥
+            getSockets().map((s: any) => {
+                //console.log(s._socket.remoteAddress);
+                let ip = s._socket.remoteAddress;
+                if (s._socket.remoteAddress.substr(0, 7) == "::ffff:") {
+                    ip = s._socket.remoteAddress.substr(7)
+                }
+                if(ip == address){
+                    let information : Message = ({'type': MessageType.RESULT, 'data': result+'?'+exeN.toString()+'?'+getPublicFromWallet()});
+                    console.log(information);
+                    console.log(JSON.stringify(information));
+                    s.send(JSON.stringify(information));
+                }
+            });
+        });
 
-            //Do nothing
+    }else if(taskName === "caffe"){
 
-        }
-        else {
+        exec('./start_caffe.sh', (err, stdout, stderr) => {
+            // console.log("stdout="+stdout);
+            // let returnInf: string[] = stdout.toString().split(';');
+            // pouw = returnInf[0];
+            //执行任务结果
+            // result = stdout.toString();
+            // ncount = returnInf[2];
+            // let runTime = "";
+            // runTime = returnInf[3];
+            // console.log("pouw= "+pouw);
+            // console.log("ncount= "+ncount);
+            // console.log("runTime= "+runTime);
+            //读取文件，获取训练log记录
+            var fs = require('fs');
+            var resPath="home/syc/naivecoin/res.txt";
+            result = fs.readFileSync(resPath, "utf8");
+            console.log("result= "+result);
 
-            //生成coinbase奖励区块，并挖出之前的交易
-            const previousBlock: Block = getLatestBlock();
-            const nextIndex: number = previousBlock.index + 1;
-            const nextTimestamp: number = getCurrentTimestamp();
-            const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
-            const blockData: Transaction[] = [coinbaseTx].concat(getTransactionPool());
-            const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0, pouw);
-            const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0,pouw);
+            //获取执行的有用功
+            //延迟5秒，等待写入文件
+            sleep(5000);
+            console.log("time out finished!");
 
-            if (addBlockToChain(newBlock)) {
+            //读取文件，获得有用功
+            var path="/home/syc/naivecoin/log/result.txt";
+            exeN = fs.readFileSync(path, "utf8");
+            console.log("exeN="+exeN);
 
-                broadcastLatest();
-                //return newBlock;
+            //删除有用功记录文件
+            fs.truncate('/home/syc/naivecoin/log/result.txt', 0, function(){console.log('done')});
+
+            //判断是否有出块条件
+            if(getDifficulty(getBlockchain()) == 0) {
+
+                //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
+                const key = ec.keyFromPrivate("d66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex');
+                pouw = toHexString(key.sign(result+";SUCCESS").toDER());
+                console.log("pouw"+pouw);
 
             } else {
 
-                //return null;
+                let SRNG1 : number=Math.floor(Math.random()*999+1);
+                let SRNG2 : number=1000;
+                let EXP : number =  2.718281828;
+                let SRNG : number = SRNG1 / SRNG2;
+                let parm1 : number = Math.pow(EXP,(exeN/getDifficulty(getBlockchain())));
+                let parm2 : number= Math.pow(EXP,-(exeN/getDifficulty(getBlockchain())));
+                let Prob : number= (parm1-parm2)/(parm1+parm2);
+
+                if(Prob > SRNG) {
+
+                    //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
+                    const key = ec.keyFromPrivate("d66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex');
+                    pouw = toHexString(key.sign(result+";SUCCESS").toDER());
+                    console.log("pouw"+pouw);
+
+                }
+                else {
+
+                    pouw = "FAILED";
+
+                }
+            }
+
+            //根据pouw判断是否可以生成区块
+            if(pouw == "FAILED"){
+
+                //Do nothing
+
+            }
+            else {
+
+                //生成coinbase奖励区块，并挖出之前的交易
+                const previousBlock: Block = getLatestBlock();
+                const nextIndex: number = previousBlock.index + 1;
+                const nextTimestamp: number = getCurrentTimestamp();
+                const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
+                const blockData: Transaction[] = [coinbaseTx].concat(getTransactionPool());
+                const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0, pouw);
+                const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0,pouw);
+
+                if (addBlockToChain(newBlock)) {
+
+                    broadcastLatest();
+                    //return newBlock;
+
+                } else {
+
+                    //return null;
+
+                }
 
             }
 
-        }
-
-        //任务结果返还给用户，以及执行任务矿工节点的公钥
-        getSockets().map((s: any) => {
-            //console.log(s._socket.remoteAddress);
-            let ip = s._socket.remoteAddress;
-            if (s._socket.remoteAddress.substr(0, 7) == "::ffff:") {
-                ip = s._socket.remoteAddress.substr(7)
-            }
-            if(ip == address){
-                let information : Message = ({'type': MessageType.RESULT, 'data': result+'?'+exeN.toString()+'?'+getPublicFromWallet()});
-                console.log(information);
-                console.log(JSON.stringify(information));
-                s.send(JSON.stringify(information));
-            }
+            //任务结果返还给用户，以及执行任务矿工节点的公钥
+            getSockets().map((s: any) => {
+                //console.log(s._socket.remoteAddress);
+                let ip = s._socket.remoteAddress;
+                if (s._socket.remoteAddress.substr(0, 7) == "::ffff:") {
+                    ip = s._socket.remoteAddress.substr(7)
+                }
+                if(ip == address){
+                    let information : Message = ({'type': MessageType.RESULT, 'data': result+'?'+exeN.toString()+'?'+getPublicFromWallet()});
+                    console.log(information);
+                    console.log(JSON.stringify(information));
+                    s.send(JSON.stringify(information));
+                }
+            });
         });
-    });
+
+    }
+
 
 };
 

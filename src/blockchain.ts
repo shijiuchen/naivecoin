@@ -146,10 +146,10 @@ const generatePouwNextBlock = (message: Message ) => {
     console.log(message);
     console.log(getDifficulty(getBlockchain()));
     const { exec } = require('child_process');
-
+    console.log("tastname="+taskName);
     //进行任务类型判断
     if(taskName === "asylo"){
-
+        console.log("find matrix")
         exec('docker run  --rm \\\n' +
             '    -v bazel-cache:/root/.cache/bazel \\\n' +
             '    -v "/home/syc/asylo-examples":/opt/my-project \\\n' +
@@ -263,8 +263,8 @@ const generatePouwNextBlock = (message: Message ) => {
         });
 
     }else if(taskName === "caffe"){
-
-        exec('./start_caffe.sh', (err, stdout, stderr) => {
+        console.log("find caffe");
+        exec('bash /home/syc/naivecoin/start_caffe.sh', (err, stdout, stderr) => {
             // console.log("stdout="+stdout);
             // let returnInf: string[] = stdout.toString().split(';');
             // pouw = returnInf[0];
@@ -278,9 +278,12 @@ const generatePouwNextBlock = (message: Message ) => {
             // console.log("runTime= "+runTime);
             //读取文件，获取训练log记录
             var fs = require('fs');
-            var resPath="home/syc/naivecoin/res.txt";
+            var resPath="/home/syc/naivecoin/res.txt";
             result = fs.readFileSync(resPath, "utf8");
             console.log("result= "+result);
+
+            //获取任务执行结果之后，删除记录文件
+            fs.truncate('/home/syc/naivecoin/res.txt', 0, function(){console.log('done')});
 
             //获取执行的有用功
             //延迟5秒，等待写入文件
@@ -375,7 +378,6 @@ const generatePouwNextBlock = (message: Message ) => {
         });
 
     }
-
 
 };
 

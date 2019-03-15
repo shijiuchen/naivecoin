@@ -103,6 +103,7 @@ class Agent {
      * @param estiTime  预计请求时间(s)
      */
     public schedulerTask = (address: string,taskName: string, params: string, reqCPU: string, reqMEM: string, estiTime: string, money: string): void =>{
+
         timeSend=new Date().getTime();
         console.log("now time= "+timeSend);
 
@@ -131,11 +132,23 @@ class Agent {
             .flatten()
             .value();
         const resTxouts: TxOut=minedTxOuts.find((txout) => txout.LOCK===true && txout.amount===parseInt(money));
-        console.log("resTxouts="+resTxouts);
+        console.log("resTxouts="+JSON.stringify(resTxouts));
         if(resTxouts!=null){//确实存在这笔锁定的TxOut
 
             console.log("Going into scheduling!");
 
+
+            //TODO 分布式调度选择多节点分配
+
+            if(taskName === "hadoop"){
+
+                let information : Message = ({'type': MessageType.GET_PARAM, 'data': address+':'+params+':'+taskName});
+                console.log(information);
+                console.log(JSON.stringify(information));
+                generatePouwNextBlock(information);
+                return;
+
+            }
 
 
 

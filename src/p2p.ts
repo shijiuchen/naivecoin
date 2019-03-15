@@ -13,9 +13,10 @@ import {
     sendTransaction,
     getAccountBalance,
     getMyUnspentTransactionOutputs,
-    unspentTxOuts
+    unspentTxOuts,
+    sleep, getCurrentTimestamp, calculatepouwHash, ReturnAllNcount
 } from './blockchain';
-import {Transaction, UnspentTxOut} from './transaction';
+import {ec, getCoinbaseTransaction, toHexString, Transaction, UnspentTxOut} from './transaction';
 import {getTransactionPool} from './transactionPool';
 import {timeSend} from './agent';
 import {agent} from "./main";
@@ -34,7 +35,10 @@ enum MessageType {
     RESULT = 6,
     REQUEST_UTXO_LOCK=7,
     UTXO_LOCK_SUCCESS=8,
-    FILE_TASK = 10
+    REQUEST_NCOUNT=9,
+    FILE_TASK = 10,
+    RES_NCOUNT = 11,
+    RESULTAllNODES = 12
 }
 
 class Message {
@@ -206,7 +210,162 @@ const initMessageHandler = (ws: WebSocket) => {
                     agent.schedulerTask(Address,TaskName,Params,ReqCPU,ReqMEM,EstiTime,Money);
 
                     break;
+                    //请求有用功返还
+                case MessageType.REQUEST_NCOUNT:
+
+                    //获取执行的有用功
+                    //延迟5秒，等待写入文件
+                    let pouw;
+                    sleep(5000);
+                    console.log("time out finished!");
+
+                    //读取文件，获得有用功
+                    var fs = require('fs');
+                    var path="/home/syc/naivecoin/log/result.txt";
+                    let exeN = fs.readFileSync(path, "utf8");
+                    console.log("exeN="+exeN);
+
+                    //删除有用功记录文件
+                    fs.truncate('/home/syc/naivecoin/log/result.txt', 0, function(){console.log('done')});
+
+                    //判断是否有出块条件
+                    if(getDifficulty(getBlockchain()) == 0) {
+
+                        //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
+                        const key = ec.keyFromPrivate("d66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex');
+                        pouw = toHexString(key.sign(exeN+";SUCCESS").toDER());
+                        console.log("pouw"+pouw);
+
+                    } else {
+
+                        let SRNG1 : number=Math.floor(Math.random()*999+1);
+                        let SRNG2 : number=1000;
+                        let EXP : number =  2.718281828;
+                        let SRNG : number = SRNG1 / SRNG2;
+                        let parm1 : number = Math.pow(EXP,(exeN/getDifficulty(getBlockchain())));
+                        let parm2 : number= Math.pow(EXP,-(exeN/getDifficulty(getBlockchain())));
+                        let Prob : number= (parm1-parm2)/(parm1+parm2);
+
+                        if(Prob > SRNG) {
+
+                            //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
+                            const key = ec.keyFromPrivate("d66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex');
+                            pouw = toHexString(key.sign(exeN+";SUCCESS").toDER());
+                            console.log("pouw"+pouw);
+
+                        }
+                        else {
+
+                            pouw = "FAILED";
+
+                        }
+                    }
+
+                    //根据pouw判断是否可以生成区块
+                    if(pouw == "FAILED"){
+
+                        //Do nothing
+
+                    }
+                    else {
+
+                        //生成coinbase奖励区块，并挖出之前的交易
+                        const previousBlock: Block = getLatestBlock();
+                        const nextIndex: number = previousBlock.index + 1;
+                        const nextTimestamp: number = getCurrentTimestamp();
+                        const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
+                        const blockData: Transaction[] = [coinbaseTx].concat(getTransactionPool());
+                        const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0, pouw);
+                        const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0,pouw);
+
+                        if (addBlockToChain(newBlock)) {
+
+                            broadcastLatest();
+                            //return newBlock;
+
+                        } else {
+
+                            //return null;
+
+                        }
+
+                    }
+
+                    getSockets().map((s: any) => {
+                        //console.log(s._socket.remoteAddress);
+                        let ip = s._socket.remoteAddress;
+                        if (s._socket.remoteAddress.substr(0, 7) == "::ffff:") {
+                            ip = s._socket.remoteAddress.substr(7)
+                        }
+                        if(ip == "192.168.1.56"){
+                            let information : Message = ({'type': MessageType.RES_NCOUNT, 'data': getPublicFromWallet()+":"+exeN+":"+message.data.toString()});
+                            console.log(information);
+                            console.log(JSON.stringify(information));
+                            s.send(JSON.stringify(information));
+                        }
+                    });
+
+                    break;
                 case MessageType.FILE_TASK:
+                    break;
+
+                    //返回的执行指令数结果
+                case MessageType.RES_NCOUNT:
+
+                    ReturnAllNcount(message);
+
+                    break;
+                    //分布式任务返还结果
+                case MessageType.RESULTAllNODES:
+
+                    let ResAllNodesAmount: string[]=message.data.toString().split(":");
+                    let pk1 : string = ResAllNodesAmount[0];
+                    let ncount1 : string = ResAllNodesAmount[1];
+                    let pk2 : string = ResAllNodesAmount[2];
+                    let ncount2 : string = ResAllNodesAmount[3];
+                    let pk3 : string = ResAllNodesAmount[4];
+                    let ncount3 : string = ResAllNodesAmount[5];
+                    let resHadoop : string= ResAllNodesAmount[6];
+
+                    let amount1=Math.trunc(Math.cbrt(parseInt(ncount1)));
+                    let amount2=Math.trunc(Math.cbrt(parseInt(ncount2)));
+                    let amount3=Math.trunc(Math.cbrt(parseInt(ncount3)));
+
+                    console.log("resHadoop="+resHadoop);//将返还结果进行打印
+
+                    console.log("ncount1="+ncount1);
+                    console.log("ncount2="+ncount2);
+                    console.log("ncount3="+ncount3);
+
+                    console.log("returnPK1="+pk1);
+                    console.log("returnPK2="+pk2);
+                    console.log("returnPK3="+pk3);
+
+                    console.log("amount1="+amount1);
+                    console.log("amount2="+amount2);
+                    console.log("amount3="+amount3);
+
+                    //进行锁定交易的解锁
+                    let posFind = unspentTxOuts.findIndex(item => {
+                        return item.LOCK==true && item.address===getPublicFromWallet();//TODO 有点问题
+                    });
+
+                    //预估大于实际 或者账户的钱够用,直接解锁
+                    if(unspentTxOuts[posFind].amount >= (amount1+amount2+amount3) || getAccountBalance() >= (amount1+amount2+amount3)){
+
+                        unspentTxOuts[pos].LOCK=false;
+                        sendTransaction(pk1,amount1,false);
+                        sendTransaction(pk2,amount2,false);
+                        sendTransaction(pk3,amount3,false);
+
+                    }else{//清空所有钱并且停掉用户
+
+                        //TODO 将欠款数额，被欠款人地址，欠款人地址发送给agent ，，这种情况不容易出现，暂时不写
+                        let arrears: number = (amount1+amount2+amount3)-getAccountBalance();//得到欠款
+                        sendTransaction(returnPK,getAccountBalance(),false);//将账户中所有的钱发给任务执行方
+
+                    }
+
                     break;
             }
         } catch (e) {

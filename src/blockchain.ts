@@ -8,8 +8,11 @@ import {addToTransactionPool, getTransactionPool, updateTransactionPool} from '.
 import {hexToBinary} from './util';
 import {createTransaction, findUnspentTxOuts, getBalance, getPrivateFromWallet, getPublicFromWallet} from './wallet';
 import {readFile, readFileSync} from "fs";
+import {All} from "tslint/lib/rules/completedDocsRule";
 // import {Message} from "_debugger";
 
+let ncountMap=new Map<string,number>(); //用于记录分布式任务指令计数
+let AllRes;
 class Block {
 
     public index: number;
@@ -149,7 +152,7 @@ const generatePouwNextBlock = (message: Message ) => {
     console.log("tastname="+taskName);
     //进行任务类型判断
     if(taskName === "asylo"){
-        console.log("find matrix")
+        console.log("find matrix");
         exec('docker run  --rm \\\n' +
             '    -v bazel-cache:/root/.cache/bazel \\\n' +
             '    -v "/home/syc/asylo-examples":/opt/my-project \\\n' +
@@ -205,7 +208,7 @@ const generatePouwNextBlock = (message: Message ) => {
 
                     //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
                     const key = ec.keyFromPrivate("d66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex');
-                    pouw = toHexString(key.sign(result+";SUCCESS").toDER());
+                    pouw = toHexString(key.sign(result+";"+exeN+";"+"SUCCESS").toDER());
                     console.log("pouw"+pouw);
 
                 }
@@ -278,12 +281,12 @@ const generatePouwNextBlock = (message: Message ) => {
             // console.log("runTime= "+runTime);
             //读取文件，获取训练log记录
             var fs = require('fs');
-            var resPath="/home/syc/naivecoin/res.txt";
+            var resPath="/home/syc/naivecoin/resCaffe.txt";
             result = fs.readFileSync(resPath, "utf8");
             console.log("result= "+result);
 
             //获取任务执行结果之后，删除记录文件
-            fs.truncate('/home/syc/naivecoin/res.txt', 0, function(){console.log('done')});
+            fs.truncate('/home/syc/naivecoin/resCaffe.txt', 0, function(){console.log('done')});
 
             //获取执行的有用功
             //延迟5秒，等待写入文件
@@ -303,7 +306,7 @@ const generatePouwNextBlock = (message: Message ) => {
 
                 //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
                 const key = ec.keyFromPrivate("d66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex');
-                pouw = toHexString(key.sign(result+";SUCCESS").toDER());
+                pouw = toHexString(key.sign(result+";"+exeN+";"+"SUCCESS").toDER());
                 console.log("pouw"+pouw);
 
             } else {
@@ -377,9 +380,168 @@ const generatePouwNextBlock = (message: Message ) => {
             });
         });
 
+    }else if(taskName === "hadoop"){
+        console.log("find hadoop");
+
+        //将用户传递的参数写入file0.txt
+        var fs = require('fs');
+        var pathin="/home/syc/naivecoin/file0.txt";
+        fs.writeFileSync(pathin,params,"utf8");
+
+
+        exec('bash /home/syc/naivecoin/start_hadoopWordCount.sh', (err, stdout, stderr) => {
+            // console.log("stdout="+stdout);
+            // let returnInf: string[] = stdout.toString().split(';');
+            // pouw = returnInf[0];
+            //执行任务结果
+            // result = stdout.toString();
+            // ncount = returnInf[2];
+            // let runTime = "";
+            // runTime = returnInf[3];
+            // console.log("pouw= "+pouw);
+            // console.log("ncount= "+ncount);
+            // console.log("runTime= "+runTime);
+
+            //读取文件，获得总wordcount结果
+            var fs = require('fs');
+            var resPath="/home/syc/naivecoin/resHadoop.txt";
+            AllRes = fs.readFileSync(resPath, "utf8");
+            console.log("AllRes= "+AllRes);
+
+            //获取任务执行结果之后，删除记录文件
+            fs.truncate('/home/syc/naivecoin/resHadoop.txt', 0, function(){console.log('done')});
+
+
+            //获取执行的有用功
+            //延迟5秒，等待写入文件
+            sleep(5000);
+            console.log("time out finished!");
+
+            //读取文件，获得有用功
+            var path="/home/syc/naivecoin/log/result.txt";
+            exeN = fs.readFileSync(path, "utf8");
+            console.log("exeN="+exeN);
+
+            //删除有用功记录文件
+            fs.truncate('/home/syc/naivecoin/log/result.txt', 0, function(){console.log('done')});
+
+            //判断是否有出块条件
+            if(getDifficulty(getBlockchain()) == 0) {
+
+                //模拟使用intel私钥进行签名，签署result+exeN+关键字"SUCCESS"
+                const key = ec.keyFromPrivate("d66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex');
+                pouw = toHexString(key.sign(result+";"+exeN+";"+"SUCCESS").toDER());
+                console.log("pouw"+pouw);
+
+            } else {
+
+                let SRNG1 : number=Math.floor(Math.random()*999+1);
+                let SRNG2 : number=1000;
+                let EXP : number =  2.718281828;
+                let SRNG : number = SRNG1 / SRNG2;
+                let parm1 : number = Math.pow(EXP,(exeN/getDifficulty(getBlockchain())));
+                let parm2 : number= Math.pow(EXP,-(exeN/getDifficulty(getBlockchain())));
+                let Prob : number= (parm1-parm2)/(parm1+parm2);
+
+                if(Prob > SRNG) {
+
+                    //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
+                    const key = ec.keyFromPrivate("d66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex');
+                    pouw = toHexString(key.sign(result+";"+exeN+";SUCCESS").toDER());
+                    console.log("pouw"+pouw);
+
+                }
+                else {
+
+                    pouw = "FAILED";
+
+                }
+            }
+
+            //根据pouw判断是否可以生成区块
+            if(pouw == "FAILED"){
+
+                //Do nothing
+
+            }
+            else {
+
+                //生成coinbase奖励区块，并挖出之前的交易
+                const previousBlock: Block = getLatestBlock();
+                const nextIndex: number = previousBlock.index + 1;
+                const nextTimestamp: number = getCurrentTimestamp();
+                const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
+                const blockData: Transaction[] = [coinbaseTx].concat(getTransactionPool());
+                const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0, pouw);
+                const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0,pouw);
+
+                if (addBlockToChain(newBlock)) {
+
+                    broadcastLatest();
+                    //return newBlock;
+
+                } else {
+
+                    //return null;
+
+                }
+
+            }
+
+            //将master的有用功存入map
+            ncountMap[getPublicFromWallet()]=parseInt(exeN);
+
+            //发送消息请求获取指令计数
+            getSockets().map((s: any) => {
+                //console.log(s._socket.remoteAddress);
+                let ip = s._socket.remoteAddress;
+                if (s._socket.remoteAddress.substr(0, 7) == "::ffff:") {
+                    ip = s._socket.remoteAddress.substr(7)
+                }
+                if(ip == "192.168.1.119" || ip == "192.168.1.121"){
+                    let information : Message = ({'type': MessageType.REQUEST_NCOUNT, 'data': address});
+                    console.log(information);
+                    console.log(JSON.stringify(information));
+                    s.send(JSON.stringify(information));
+                }
+            });
+
+
+        });
+
     }
 
 };
+
+const ReturnAllNcount = (message: Message) => {
+    let information: string[]=message.data.toString().split(":");
+    ncountMap[information[0]]=parseInt(information[1]);
+    if(ncountMap.size == 3){
+
+        getSockets().map((s: any) => {
+            //console.log(s._socket.remoteAddress);
+            let ip = s._socket.remoteAddress;
+            if (s._socket.remoteAddress.substr(0, 7) == "::ffff:") {
+                ip = s._socket.remoteAddress.substr(7)
+            }
+            if(ip == information[2].toString()){
+                let information : Message = ({'type': MessageType.RESULTAllNODES, 'data': ncountMap.keys()[0]+":"+ncountMap[ncountMap.keys()[0]]+":"+
+                        ncountMap.keys()[1]+":"+ncountMap[ncountMap.keys()[1]]+":"+ncountMap.keys()[2]+":"+ncountMap[ncountMap.keys()[2]]+":"+AllRes});
+                console.log(information);
+                console.log(JSON.stringify(information));
+                s.send(JSON.stringify(information));
+            }
+        });
+        //清空记录map
+        ncountMap.clear();
+
+    }else{
+        return;
+    }
+};
+
+
+
 
 // gets the unspent transaction outputs owned by the wallet
 const getMyUnspentTransactionOutputs = () => {
@@ -583,5 +745,5 @@ export {
     Block, getBlockchain, getUnspentTxOuts, getLatestBlock, sendTransaction,
     generateRawNextBlock, generateNextBlock, generatenextBlockWithTransaction,
     handleReceivedTransaction, getMyUnspentTransactionOutputs,
-    getAccountBalance, isValidBlockStructure, replaceChain, addBlockToChain,getDifficulty,generatePouwNextBlock,calculatepouwHash, getCurrentTimestamp,unspentTxOuts
+    getAccountBalance, isValidBlockStructure, replaceChain, addBlockToChain,getDifficulty,generatePouwNextBlock,calculatepouwHash, getCurrentTimestamp,unspentTxOuts,sleep,ReturnAllNcount
 };

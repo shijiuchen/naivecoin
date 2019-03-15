@@ -419,7 +419,9 @@ const generatePouwNextBlock = (message: Message ) => {
 
             //读取文件，获得有用功
             var path="/home/syc/naivecoin/log/result.txt";
-            exeN = fs.readFileSync(path, "utf8");
+            let  receiver : string[]= fs.readFileSync(path, "utf8").toString().split("\n");
+            console.log("receiver="+receiver);
+            exeN = (parseInt(receiver[0])+parseInt(receiver[1])).toString();
             console.log("exeN="+exeN);
 
             //删除有用功记录文件
@@ -439,8 +441,8 @@ const generatePouwNextBlock = (message: Message ) => {
                 let SRNG2 : number=1000;
                 let EXP : number =  2.718281828;
                 let SRNG : number = SRNG1 / SRNG2;
-                let parm1 : number = Math.pow(EXP,(exeN/getDifficulty(getBlockchain())));
-                let parm2 : number= Math.pow(EXP,-(exeN/getDifficulty(getBlockchain())));
+                let parm1 : number = Math.pow(EXP,(parseInt(exeN)/getDifficulty(getBlockchain())));
+                let parm2 : number= Math.pow(EXP,-(parseInt(exeN)/getDifficulty(getBlockchain())));
                 let Prob : number= (parm1-parm2)/(parm1+parm2);
 
                 if(Prob > SRNG) {

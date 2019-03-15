@@ -4,7 +4,6 @@
 N=${1:-3}
 
 # start hadoop master container
-docker rm -f hadoop-master &> /dev/null
 echo "start hadoop-master container..."
 docker run -itd \
                 --network=testnetwork \
@@ -15,11 +14,9 @@ docker run -itd \
                 kiwenlau/hadoop:1.0 &> /dev/null
 
 # start hadoop slave container
-ssh shenyao4 docker rm -f hadoop-slave1 &> /dev/null
 echo "start hadoop-slave1 container..."
 ssh shenyao4 docker run -itd --network=testnetwork --name hadoop-slave1 --hostname hadoop-slave1 kiwenlau/hadoop:1.0 &> /dev/null
 echo "start hadoop-slave2 container..."
-ssh shenyao5 docker rm -f hadoop-slave2 &> /dev/null
 ssh shenyao5 docker run -itd --network=testnetwork --name hadoop-slave2 --hostname hadoop-slave2 kiwenlau/hadoop:1.0 &> /dev/null
 # get into hadoop master container
 #sudo docker exec -it hadoop-master bash

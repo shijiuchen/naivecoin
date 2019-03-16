@@ -227,7 +227,7 @@ const initMessageHandler = (ws: WebSocket) => {
                     let  receiver : string[]= fs.readFileSync(path, "utf8").toString().split("\n");
                     console.log("receiver="+receiver);
                     let sum : number = 0;
-                    for(let i=0; i < receiver.length; i++){
+                    for(let i=0; i < receiver.length-1; i++){
                         sum = sum+parseInt(receiver[i]);
                     }
 

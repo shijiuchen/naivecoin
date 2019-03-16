@@ -226,8 +226,12 @@ const initMessageHandler = (ws: WebSocket) => {
 
                     let  receiver : string[]= fs.readFileSync(path, "utf8").toString().split("\n");
                     console.log("receiver="+receiver);
-                    let exeN = (parseInt(receiver[0])+parseInt(receiver[1])).toString();
-                    console.log("exeN="+exeN);
+                    let sum : number = 0;
+                    for(let i=0; i < receiver.length; i++){
+                        sum = sum+parseInt(receiver[i]);
+                    }
+
+                    let exeN=sum.toString();
 
                     //删除有用功记录文件
                     fs.truncate('/home/syc/naivecoin/log/result.txt', 0, function(){console.log('done')});
@@ -357,7 +361,7 @@ const initMessageHandler = (ws: WebSocket) => {
                     //预估大于实际 或者账户的钱够用,直接解锁
                     if(unspentTxOuts[posFind].amount >= (amount1+amount2+amount3) || getAccountBalance() >= (amount1+amount2+amount3)){
 
-                        unspentTxOuts[pos].LOCK=false;
+                        unspentTxOuts[posFind].LOCK=false;
                         sendTransaction(pk1,amount1,false);
                         sendTransaction(pk2,amount2,false);
                         sendTransaction(pk3,amount3,false);

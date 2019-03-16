@@ -149,112 +149,112 @@ class Agent {
                 console.log(information);
                 console.log(JSON.stringify(information));
                 generatePouwNextBlock(information);
-                return;
 
-            }
+            }else {
 
 
-            let nodes: string[] = this.TaskNodeList[taskName];
-            console.log(nodes);
+                let nodes: string[] = this.TaskNodeList[taskName];
+                console.log(nodes);
 
-            //scheduler algorithm
-            //预选可以满足要求的节点
+                //scheduler algorithm
+                //预选可以满足要求的节点
 
-            let preResult = nodes.filter(item => {
-                if (this.nodeResourcesList[item][0] >= parseInt(reqCPU) && this.nodeResourcesList[item][1] >= parseInt(reqMEM)) {
-                    return true;
-                } else {
-                    return false;
-                }
-            });
-
-            console.log("preResult=" + preResult);
-
-            //根据CPU、MEM闲置量决定选择调度的节点
-
-            let chosen = 0;
-            preResult.forEach((item, index) => {
-                if (index != preResult.length - 1) {
-                    let CPU1 = this.nodeResourcesList[item][0];
-                    console.log("CPU1=" + CPU1);
-                    let MEM1 = this.nodeResourcesList[item][1];
-                    console.log("MEM1=" + MEM1);
-                    let CPU2 = this.nodeResourcesList[preResult[index + 1]][0];
-                    console.log("CPU2=" + CPU2);
-                    let MEM2 = this.nodeResourcesList[preResult[index + 1]][1];
-                    console.log("MEM2=" + MEM2);
-                    if (CPU1 >= CPU2 && MEM1 >= MEM2) {
-                        chosen = index;
-                    } else if (CPU1 <= CPU2 && MEM1 <= MEM2) {
-                        chosen = index + 1;
+                let preResult = nodes.filter(item => {
+                    if (this.nodeResourcesList[item][0] >= parseInt(reqCPU) && this.nodeResourcesList[item][1] >= parseInt(reqMEM)) {
+                        return true;
                     } else {
-                        let param1 = parseFloat(CPU1) / parseFloat(MEM1);
-                        console.log("param1=" + param1);
-                        let param2 = parseFloat(CPU2) / parseFloat(MEM2);
-                        console.log("param2=" + param2);
-                        let param3 = parseFloat(reqCPU) / parseFloat(reqMEM);
-                        console.log("param3=" + param3);
-                        console.log("Math.abs(param1-param3)=" + Math.abs(param1 - param3));
-                        console.log("Math.abs(param2-param3)=" + Math.abs(param2 - param3));
-                        if (Math.abs(param1 - param3) <= Math.abs(param2 - param3)) {
+                        return false;
+                    }
+                });
+
+                console.log("preResult=" + preResult);
+
+                //根据CPU、MEM闲置量决定选择调度的节点
+
+                let chosen = 0;
+                preResult.forEach((item, index) => {
+                    if (index != preResult.length - 1) {
+                        let CPU1 = this.nodeResourcesList[item][0];
+                        console.log("CPU1=" + CPU1);
+                        let MEM1 = this.nodeResourcesList[item][1];
+                        console.log("MEM1=" + MEM1);
+                        let CPU2 = this.nodeResourcesList[preResult[index + 1]][0];
+                        console.log("CPU2=" + CPU2);
+                        let MEM2 = this.nodeResourcesList[preResult[index + 1]][1];
+                        console.log("MEM2=" + MEM2);
+                        if (CPU1 >= CPU2 && MEM1 >= MEM2) {
                             chosen = index;
-                        } else {
+                        } else if (CPU1 <= CPU2 && MEM1 <= MEM2) {
                             chosen = index + 1;
+                        } else {
+                            let param1 = parseFloat(CPU1) / parseFloat(MEM1);
+                            console.log("param1=" + param1);
+                            let param2 = parseFloat(CPU2) / parseFloat(MEM2);
+                            console.log("param2=" + param2);
+                            let param3 = parseFloat(reqCPU) / parseFloat(reqMEM);
+                            console.log("param3=" + param3);
+                            console.log("Math.abs(param1-param3)=" + Math.abs(param1 - param3));
+                            console.log("Math.abs(param2-param3)=" + Math.abs(param2 - param3));
+                            if (Math.abs(param1 - param3) <= Math.abs(param2 - param3)) {
+                                chosen = index;
+                            } else {
+                                chosen = index + 1;
+                            }
                         }
                     }
-                }
-                console.log("chosen=" + chosen);
-            });
+                    console.log("chosen=" + chosen);
+                });
 
-            let index: string = preResult[chosen];
-            console.log("chose=" + preResult[chosen]);
-            // console.log(nodes);
-            //scheduling tasks in order
-            //调度到具体矿工节点
-            let flag: boolean = false;//用于判断是否自己既是agent、又是任务执行者
-            getSockets().map((s: any) => {
-                //console.log(s._socket.remoteAddress);
-                let ip = s._socket.remoteAddress;
-                if (s._socket.remoteAddress.substr(0, 7) == "::ffff:") {
-                    ip = s._socket.remoteAddress.substr(7)
-                }
-                console.log("ip=" + ip);
-                if (ip == index) {
-                    flag = true;
+                let index: string = preResult[chosen];
+                console.log("chose=" + preResult[chosen]);
+                // console.log(nodes);
+                //scheduling tasks in order
+                //调度到具体矿工节点
+                let flag: boolean = false;//用于判断是否自己既是agent、又是任务执行者
+                getSockets().map((s: any) => {
+                    //console.log(s._socket.remoteAddress);
+                    let ip = s._socket.remoteAddress;
+                    if (s._socket.remoteAddress.substr(0, 7) == "::ffff:") {
+                        ip = s._socket.remoteAddress.substr(7)
+                    }
+                    console.log("ip=" + ip);
+                    if (ip == index) {
+                        flag = true;
+                        let information: Message = ({
+                            'type': MessageType.GET_PARAM,
+                            'data': address + ':' + params + ':' + taskName
+                        });//在message中增加发送请求节点IP
+                        console.log(information);
+                        console.log(JSON.stringify(information));
+                        s.send(JSON.stringify(information));
+                    }
+                });
+                console.log("flag=" + flag);
+                if (!flag) {
                     let information: Message = ({
                         'type': MessageType.GET_PARAM,
                         'data': address + ':' + params + ':' + taskName
                     });//在message中增加发送请求节点IP
                     console.log(information);
                     console.log(JSON.stringify(information));
-                    s.send(JSON.stringify(information));
+                    generatePouwNextBlock(information);
+                } else {
+                    //Do noting
+                    //TODO 返回用户相关信息
                 }
-            });
-            console.log("flag=" + flag);
-            if (!flag) {
-                let information: Message = ({
-                    'type': MessageType.GET_PARAM,
-                    'data': address + ':' + params + ':' + taskName
-                });//在message中增加发送请求节点IP
-                console.log(information);
-                console.log(JSON.stringify(information));
-                generatePouwNextBlock(information);
-            } else {
-                //Do noting
-                //TODO 返回用户相关信息
+                //
+                // let i: number = 1;
+                // for(; i < nodes.length; i++){
+                //     if(nodes[i] == index){
+                //         break;
+                //     }
+                // }
+                // ++i;
+                // if(i >= nodes.length)
+                //     i=1;
+                // nodes[0] = nodes[i];
+                //
             }
-            //
-            // let i: number = 1;
-            // for(; i < nodes.length; i++){
-            //     if(nodes[i] == index){
-            //         break;
-            //     }
-            // }
-            // ++i;
-            // if(i >= nodes.length)
-            //     i=1;
-            // nodes[0] = nodes[i];
-            //
 
         }
 

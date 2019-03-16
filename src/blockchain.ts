@@ -421,7 +421,13 @@ const generatePouwNextBlock = (message: Message ) => {
             var path="/home/syc/naivecoin/log/result.txt";
             let  receiver : string[]= fs.readFileSync(path, "utf8").toString().split("\n");
             console.log("receiver="+receiver);
-            exeN = (parseInt(receiver[0])+parseInt(receiver[1])).toString();
+
+            let sum : number = 0;
+            for(let i=0; i < receiver.length; i++){
+                sum = sum+parseInt(receiver[i]);
+            }
+
+            exeN=sum.toString();
             console.log("exeN="+exeN);
 
             //删除有用功记录文件
@@ -505,6 +511,8 @@ const generatePouwNextBlock = (message: Message ) => {
                     console.log(information);
                     console.log(JSON.stringify(information));
                     s.send(JSON.stringify(information));
+                    sleep(50000);
+                    console.log("REQUEST_NCOUNT finished!");
                 }
             });
 
@@ -518,8 +526,20 @@ const generatePouwNextBlock = (message: Message ) => {
 const ReturnAllNcount = (message: Message) => {
     let information: string[]=message.data.toString().split(":");
     ncountMap[information[0]]=parseInt(information[1]);
-    if(ncountMap.size == 3){
+    console.log("ncountMap="+JSON.stringify(ncountMap));
+    console.log("size="+Object.keys(ncountMap).length);
+    if(Object.keys(ncountMap).length == 3){
 
+        let keys : string[] = [];
+        let values : string[] = [];
+        for(var k in ncountMap){
+
+            keys.push(k);
+            values.push(ncountMap[k]);
+
+        }
+        console.log("keys="+keys);
+        console.log("values="+values);
         getSockets().map((s: any) => {
             //console.log(s._socket.remoteAddress);
             let ip = s._socket.remoteAddress;
@@ -527,8 +547,8 @@ const ReturnAllNcount = (message: Message) => {
                 ip = s._socket.remoteAddress.substr(7)
             }
             if(ip == information[2].toString()){
-                let information : Message = ({'type': MessageType.RESULTAllNODES, 'data': ncountMap.keys()[0]+":"+ncountMap[ncountMap.keys()[0]]+":"+
-                        ncountMap.keys()[1]+":"+ncountMap[ncountMap.keys()[1]]+":"+ncountMap.keys()[2]+":"+ncountMap[ncountMap.keys()[2]]+":"+AllRes});
+                let information : Message = ({'type': MessageType.RESULTAllNODES, 'data': keys[0]+":"+values[0]+":"+
+                        keys[1]+":"+values[1]+":"+keys[2]+":"+values[2]+":"+AllRes});
                 console.log(information);
                 console.log(JSON.stringify(information));
                 s.send(JSON.stringify(information));

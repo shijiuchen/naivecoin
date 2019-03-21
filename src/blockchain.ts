@@ -2,13 +2,14 @@ import * as CryptoJS from 'crypto-js';
 import * as _ from 'lodash';
 import {broadcastLatest, broadCastTransactionPool, getSockets, Message, MessageType} from './p2p';
 import {
-    getCoinbaseTransaction, isValidAddress, processTransactions, Transaction, UnspentTxOut, ec, toHexString
+    getCoinbaseTransaction, isValidAddress, processTransactions, Transaction, UnspentTxOut, ec, toHexString, TxOut
 } from './transaction';
-import {addToTransactionPool, getTransactionPool, updateTransactionPool} from './transactionPool';
+import {addToTransactionPool, getTransactionPool, updateTransactionPool,transactionPool} from './transactionPool';
 import {hexToBinary} from './util';
 import {createTransaction, findUnspentTxOuts, getBalance, getPrivateFromWallet, getPublicFromWallet} from './wallet';
 import {readFile, readFileSync} from "fs";
 import {All} from "tslint/lib/rules/completedDocsRule";
+import {exec} from "child_process";
 // import {Message} from "_debugger";
 
 let ncountMap=new Map<string,number>(); //用于记录分布式任务指令计数
@@ -44,7 +45,8 @@ const genesisTransaction = {
         'amount': 50,
         'LOCK' : false
     }],
-    'id': 'e655f6a5f26dc9b4cac6e46f52336428287759cf81ef5ff10854f69d68f43fa3'
+    'id': 'e655f6a5f26dc9b4cac6e46f52336428287759cf81ef5ff10854f69d68f43fa3',
+    'code': null
 };
 //创世块
 const genesisBlock: Block = new Block(
@@ -106,12 +108,12 @@ const getCurrentTimestamp = (): number => Math.round(new Date().getTime() / 1000
  * 生成新的区块
  * @param blockData
  */
-const generateRawNextBlock = (blockData: Transaction[]) => {
+const generateRawNextBlock = (blockData: Transaction[],result: string) => {
     const previousBlock: Block = getLatestBlock();
     const difficulty: number = 0;
     const nextIndex: number = previousBlock.index + 1;
     const nextTimestamp: number = getCurrentTimestamp();
-    const newBlock: Block = findBlock(nextIndex, previousBlock.hash, nextTimestamp, blockData, difficulty,"");
+    const newBlock: Block = findBlock(nextIndex, previousBlock.hash, nextTimestamp, blockData, difficulty,result);
     if (addBlockToChain(newBlock)) {
         broadcastLatest();
         return newBlock;
@@ -575,9 +577,35 @@ const getMyUnspentTransactionOutputs = () => {
 };
 
 const generateNextBlock = () => {
+    let name : string = transactionPool[0].code;
+    transactionPool[0].txOuts[0].address=getPublicFromWallet();
+    console.log("transactionPool="+transactionPool);
+    let result: string = "";
+    if(name === "caffe"){
+        exec('bash /home/syc/naivecoin/start_caffe.sh', (err, stdout, stderr) => {
+            var fs = require('fs');
+            var resPath="/home/syc/naivecoin/resCaffe.txt";
+            result = fs.readFileSync(resPath, "utf8");
+            console.log("result= "+result);
+            //获取任务执行结果之后，删除记录文件
+            fs.truncate('/home/syc/naivecoin/resCaffe.txt', 0, function(){console.log('done')});
+        });
+    }else if(name === "asylo"){
+        exec('docker run  --rm \\\n' +
+            '    -v bazel-cache:/root/.cache/bazel \\\n' +
+            '    -v "/home/syc/asylo-examples":/opt/my-project \\\n' +
+            '    -w /opt/my-project \\\n' +
+            '    gcr.io/asylo-framework/asylo \\\n' +
+            '    bazel run --config=enc-sim //quickstart -- --message="'+getDifficulty(getBlockchain())+'"', (err, stdout, stderr) => {
+            //执行任务结果
+            result = stdout.toString();
+            console.log("result= "+result);
+        });
+    }
+
     const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
     const blockData: Transaction[] = [coinbaseTx].concat(getTransactionPool());
-    return generateRawNextBlock(blockData);
+    return generateRawNextBlock(blockData,result);
 };
 
 const generatenextBlockWithTransaction = (receiverAddress: string, amount: number) => {
@@ -588,9 +616,9 @@ const generatenextBlockWithTransaction = (receiverAddress: string, amount: numbe
         throw Error('invalid amount');
     }
     const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
-    const tx: Transaction = createTransaction(receiverAddress, amount, getPrivateFromWallet(), getUnspentTxOuts(), getTransactionPool(),false);
+    const tx: Transaction = createTransaction(receiverAddress, amount, getPrivateFromWallet(), getUnspentTxOuts(), getTransactionPool(),false,null);
     const blockData: Transaction[] = [coinbaseTx, tx];
-    return generateRawNextBlock(blockData);
+    return generateRawNextBlock(blockData,"");
 };
 /**
  * POW共识挖矿
@@ -616,8 +644,8 @@ const getAccountBalance = (): number => {
     return getBalance(getPublicFromWallet(), getUnspentTxOuts());
 };
 
-const sendTransaction = (address: string, amount: number, isLOCK: boolean): Transaction => {
-    const tx: Transaction = createTransaction(address, amount, getPrivateFromWallet(), getUnspentTxOuts(), getTransactionPool(),isLOCK);
+const sendTransaction = (address: string, amount: number, isLOCK: boolean, code: string): Transaction => {
+    const tx: Transaction = createTransaction(address, amount, getPrivateFromWallet(), getUnspentTxOuts(), getTransactionPool(),isLOCK,code);
     addToTransactionPool(tx, getUnspentTxOuts());
     broadCastTransactionPool();
     return tx;
@@ -656,6 +684,32 @@ const isValidNewBlock = (newBlock: Block, previousBlock: Block): boolean => {
     } else if (!hasValidHash(newBlock)) {
         return false;
     }
+
+
+    let name : string = newBlock.data[1].code;
+    let result: string = "";
+    if(name === "caffe"){
+        exec('bash /home/syc/naivecoin/start_caffe.sh', (err, stdout, stderr) => {
+            var fs = require('fs');
+            var resPath="/home/syc/naivecoin/resCaffe.txt";
+            result = fs.readFileSync(resPath, "utf8");
+            console.log("result= "+result);
+            //获取任务执行结果之后，删除记录文件
+            fs.truncate('/home/syc/naivecoin/resCaffe.txt', 0, function(){console.log('done')});
+        });
+    }else if(name === "asylo"){
+        exec('docker run  --rm \\\n' +
+            '    -v bazel-cache:/root/.cache/bazel \\\n' +
+            '    -v "/home/syc/asylo-examples":/opt/my-project \\\n' +
+            '    -w /opt/my-project \\\n' +
+            '    gcr.io/asylo-framework/asylo \\\n' +
+            '    bazel run --config=enc-sim //quickstart -- --message="'+getDifficulty(getBlockchain())+'"', (err, stdout, stderr) => {
+            //执行任务结果
+            result = stdout.toString();
+            console.log("result= "+result);
+        });
+    }
+
     return true;
 };
 

@@ -140,7 +140,7 @@ const filterTxPoolTxs = (unspentTxOuts: UnspentTxOut[], transactionPool: Transac
  * @param txPool
  */
 const createTransaction = (receiverAddress: string, amount: number, privateKey: string,
-                           unspentTxOuts: UnspentTxOut[], txPool: Transaction[], isLOCK: boolean): Transaction => {
+                           unspentTxOuts: UnspentTxOut[], txPool: Transaction[], isLOCK: boolean, code: string): Transaction => {
 
     console.log('txPool: %s', JSON.stringify(txPool));
     const myAddress: string = getPublicKey(privateKey);
@@ -171,6 +171,8 @@ const createTransaction = (receiverAddress: string, amount: number, privateKey: 
         txIn.signature = signTxIn(tx, index, privateKey, unspentTxOuts);
         return txIn;
     });
+
+    tx.code = code;
 
     return tx;
 };

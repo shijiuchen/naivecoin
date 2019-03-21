@@ -149,11 +149,11 @@ const initMessageHandler = (ws: WebSocket) => {
                     });
                     if(unspentTxOuts[pos].amount >= amount || getAccountBalance() >= amount){//预估大于实际 或者账户的钱够用,直接解锁
                         unspentTxOuts[pos].LOCK=false;
-                        sendTransaction(returnPK,amount,false);
+                        sendTransaction(returnPK,amount,false, null);
                     }else{//清空所有钱并且停掉用户
                         //TODO 将欠款数额，被欠款人地址，欠款人地址发送给agent ，，这种情况不容易出现，暂时不写
                         let arrears: number = amount-getAccountBalance();//得到欠款
-                        sendTransaction(returnPK,getAccountBalance(),false);//将账户中所有的钱发给任务执行方
+                        sendTransaction(returnPK,getAccountBalance(),false, null);//将账户中所有的钱发给任务执行方
 
                     }
 
@@ -178,7 +178,7 @@ const initMessageHandler = (ws: WebSocket) => {
 
                     }else{//钱数足，进行UTXO锁定
                         //更改数据结构、找零
-                        sendTransaction(getPublicFromWallet(),parseInt(money),true);
+                        sendTransaction(getPublicFromWallet(),parseInt(money),true , null);
                         // 发送找零成功信息
                         getSockets().map((s: any) => {
                             //console.log(s._socket.remoteAddress);
@@ -366,15 +366,15 @@ const initMessageHandler = (ws: WebSocket) => {
                     if(unspentTxOuts[posFind].amount >= (amount1+amount2+amount3) || getAccountBalance() >= (amount1+amount2+amount3)){
 
                         unspentTxOuts[posFind].LOCK=false;
-                        sendTransaction(pk1,amount1,false);
-                        sendTransaction(pk2,amount2,false);
-                        sendTransaction(pk3,amount3,false);
+                        sendTransaction(pk1,amount1,false,null);
+                        sendTransaction(pk2,amount2,false,null);
+                        sendTransaction(pk3,amount3,false,null);
 
                     }else{//清空所有钱并且停掉用户
 
                         //TODO 将欠款数额，被欠款人地址，欠款人地址发送给agent ，，这种情况不容易出现，暂时不写
                         let arrears: number = (amount1+amount2+amount3)-getAccountBalance();//得到欠款
-                        sendTransaction(returnPK,getAccountBalance(),false);//将账户中所有的钱发给任务执行方
+                        sendTransaction(returnPK,getAccountBalance(),false,null);//将账户中所有的钱发给任务执行方
 
                     }
 

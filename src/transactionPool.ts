@@ -68,4 +68,6 @@ const isValidTxForPool = (tx: Transaction, aTtransactionPool: Transaction[]): bo
     return true;
 };
 
-export {addToTransactionPool, getTransactionPool, updateTransactionPool};
+
+
+export {addToTransactionPool, getTransactionPool, updateTransactionPool,transactionPool};

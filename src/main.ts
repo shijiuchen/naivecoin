@@ -62,7 +62,7 @@ const initHttpServer = (myHttpPort: number) => {
             res.send('data parameter is missing');
             return;
         }
-        const newBlock: Block = generateRawNextBlock(req.body.data);
+        const newBlock: Block = generateRawNextBlock(req.body.data,"");
         if (newBlock === null) {
             res.status(400).send('could not generate block');
         } else {
@@ -106,11 +106,12 @@ const initHttpServer = (myHttpPort: number) => {
             const address = req.body.address;
             const amount = req.body.amount;
             const isLOCK = req.body.isLOCK;
+            const code = req.body.code;
 
             if (address === undefined || amount === undefined) {
                 throw Error('invalid address or amount');
             }
-            const resp = sendTransaction(address, amount, isLOCK);
+            const resp = sendTransaction(address, amount, isLOCK, code);
             res.send(resp);
         } catch (e) {
             console.log(e.message);

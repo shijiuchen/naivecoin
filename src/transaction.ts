@@ -46,6 +46,9 @@ class Transaction {
 
     public txIns: TxIn[];
     public txOuts: TxOut[];
+
+    public code: string;
+
 }
 
 const getTransactionId = (transaction: Transaction): string => {
@@ -283,13 +286,16 @@ const isValidTxOutStructure = (txOut: TxOut): boolean => {
     if (txOut == null) {
         console.log('txOut is null');
         return false;
-    } else if (typeof txOut.address !== 'string') {
-        console.log('invalid address type in txOut');
-        return false;
-    } else if (!isValidAddress(txOut.address)) {
-        console.log('invalid TxOut address');
-        return false;
-    } else if (typeof txOut.amount !== 'number') {
+     }
+        // else if (typeof txOut.address !== 'string') {
+    //     console.log('invalid address type in txOut');
+    //     return false;
+    // }
+    // else if (!isValidAddress(txOut.address)) {
+    //     console.log('invalid TxOut address');
+    //     return false;
+    // }
+    else if (typeof txOut.amount !== 'number') {
         console.log('invalid amount type in txOut');
         return false;
     }else if(typeof txOut.LOCK !== 'boolean'){//对于TxOut结构增加判断，判断是否是boolean类型
@@ -325,6 +331,8 @@ const isValidTransactionStructure = (transaction: Transaction) => {
             .reduce((a, b) => (a && b), true)) {
         return false;
     }
+
+
     return true;
 };
 

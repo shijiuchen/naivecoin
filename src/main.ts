@@ -38,9 +38,7 @@ const initHttpServer = (myHttpPort: number) => {
     });
 
     app.get('/transaction/:id', (req, res) => {
-        const tx = _(getBlockchain())
-            .map((blocks) => blocks.data)
-            .flatten()
+        const tx = _(getTransactionPool())
             .find({'id': req.params.id});
         res.send(tx);
     });
@@ -145,6 +143,10 @@ const initHttpServer = (myHttpPort: number) => {
     app.post('/schedulerTask', (req, res) => {
         agent.requestUTXOlock(req.body.address,req.body.taskName,req.body.params,req.body.reqCPU,req.body.reqMEM,req.body.eltiTime);//将调用发布任务接口的节点ip进行传送
         res.send();
+    });
+
+    app.get('/getAlltasks', (req, res) => {
+        res.send(agent.getAllTasks());
     });
 
     app.post('/stop', (req, res) => {

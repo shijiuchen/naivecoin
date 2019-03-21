@@ -299,6 +299,12 @@ class Agent {
             }
         });
     }
+    /**
+     * return all tasks message
+     */
+    public getAllTasks =() =>{
+        return _.cloneDeep(this.TaskDockerList);
+    }
 
 }
 

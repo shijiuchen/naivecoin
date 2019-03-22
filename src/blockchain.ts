@@ -724,35 +724,6 @@ const isValidNewBlockBlock = (newBlock: Block, previousBlock: Block): boolean =>
     } else if (!hasValidHash(newBlock)) {
         return false;
     }
-
-    if(newBlock.data.length == 2) {
-        let name : string = newBlock.data[1].code;
-        let result: string = "";
-        if (name === "caffe") {
-            exec('bash /home/syc/naivecoin/start_caffe.sh', (err, stdout, stderr) => {
-                var fs = require('fs');
-                var resPath = "/home/syc/naivecoin/resCaffe.txt";
-                result = fs.readFileSync(resPath, "utf8");
-                console.log("result= " + result);
-                //获取任务执行结果之后，删除记录文件
-                fs.truncate('/home/syc/naivecoin/resCaffe.txt', 0, function () {
-                    console.log('done')
-                });
-            });
-        } else if (name === "asylo") {
-            exec('docker run  --rm \\\n' +
-                '    -v bazel-cache:/root/.cache/bazel \\\n' +
-                '    -v "/home/syc/asylo-examples":/opt/my-project \\\n' +
-                '    -w /opt/my-project \\\n' +
-                '    gcr.io/asylo-framework/asylo \\\n' +
-                '    bazel run --config=enc-sim //quickstart -- --message="' + getDifficulty(getBlockchain()) + '"', (err, stdout, stderr) => {
-                //执行任务结果
-                result = stdout.toString();
-                console.log("result= " + result);
-            });
-        }
-    }
-
     return true;
 };
 

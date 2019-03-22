@@ -21,6 +21,7 @@ import {getTransactionPool} from './transactionPool';
 import {timeSend} from './agent';
 import {agent} from "./main";
 import {getPublicFromWallet} from "./wallet";
+import {exec} from "child_process";
 
 //一个节点连接就有一个socket
 const sockets: WebSocket[] = [];
@@ -430,28 +431,110 @@ const handleBlockchainResponse = (receivedBlocks: Block[]) => {
         return;
     }
     const latestBlockReceived: Block = receivedBlocks[receivedBlocks.length - 1];
-    if (!isValidBlockStructure(latestBlockReceived)) {
-        console.log('block structuture not valid');
-        return;
-    }
-    const latestBlockHeld: Block = getLatestBlock();
-    if (latestBlockReceived.index > latestBlockHeld.index) {
-        console.log('blockchain possibly behind. We got: '
-            + latestBlockHeld.index + ' Peer got: ' + latestBlockReceived.index);
-        if (latestBlockHeld.hash === latestBlockReceived.previousHash) {
-            if (addBlockToChainChain(latestBlockReceived)) {
-                broadcast(responseLatestMsg());
-            }
-        } else if (receivedBlocks.length === 1) {
-            console.log('We have to query the chain from our peer');
-            broadcast(queryAllMsg());
-        } else {
-            console.log('Received blockchain is longer than current blockchain');
-            replaceChain(receivedBlocks);
+
+    //先判断是不是智能合约区块
+    if(latestBlockReceived.data.length == 2) {
+        let name : string = latestBlockReceived.data[1].code;
+        let result: string = "";
+        if (name === "caffe") {
+            exec('bash /home/syc/naivecoin/start_caffe.sh', (err, stdout, stderr) => {
+                var fs = require('fs');
+                var resPath = "/home/syc/naivecoin/resCaffe.txt";
+                result = fs.readFileSync(resPath, "utf8");
+                console.log("result= " + result);
+                //获取任务执行结果之后，删除记录文件
+                fs.truncate('/home/syc/naivecoin/resCaffe.txt', 0, function () {
+                    console.log('done')
+                });
+
+                if (!isValidBlockStructure(latestBlockReceived)) {
+                    console.log('block structuture not valid');
+                    return;
+                }
+                const latestBlockHeld: Block = getLatestBlock();
+                if (latestBlockReceived.index > latestBlockHeld.index) {
+                    console.log('blockchain possibly behind. We got: '
+                        + latestBlockHeld.index + ' Peer got: ' + latestBlockReceived.index);
+                    if (latestBlockHeld.hash === latestBlockReceived.previousHash) {
+                        if (addBlockToChainChain(latestBlockReceived)) {
+                            broadcast(responseLatestMsg());
+                        }
+                    } else if (receivedBlocks.length === 1) {
+                        console.log('We have to query the chain from our peer');
+                        broadcast(queryAllMsg());
+                    } else {
+                        console.log('Received blockchain is longer than current blockchain');
+                        replaceChain(receivedBlocks);
+                    }
+                } else {
+                    console.log('received blockchain is not longer than received blockchain. Do nothing');
+                }
+
+
+            });
+        } else if (name === "asylo") {
+            exec('docker run  --rm \\\n' +
+                '    -v bazel-cache:/root/.cache/bazel \\\n' +
+                '    -v "/home/syc/asylo-examples":/opt/my-project \\\n' +
+                '    -w /opt/my-project \\\n' +
+                '    gcr.io/asylo-framework/asylo \\\n' +
+                '    bazel run --config=enc-sim //quickstart -- --message="' + getDifficulty(getBlockchain()) + '"', (err, stdout, stderr) => {
+                //执行任务结果
+                result = stdout.toString();
+                console.log("result= " + result);
+
+                if (!isValidBlockStructure(latestBlockReceived)) {
+                    console.log('block structuture not valid');
+                    return;
+                }
+                const latestBlockHeld: Block = getLatestBlock();
+                if (latestBlockReceived.index > latestBlockHeld.index) {
+                    console.log('blockchain possibly behind. We got: '
+                        + latestBlockHeld.index + ' Peer got: ' + latestBlockReceived.index);
+                    if (latestBlockHeld.hash === latestBlockReceived.previousHash) {
+                        if (addBlockToChainChain(latestBlockReceived)) {
+                            broadcast(responseLatestMsg());
+                        }
+                    } else if (receivedBlocks.length === 1) {
+                        console.log('We have to query the chain from our peer');
+                        broadcast(queryAllMsg());
+                    } else {
+                        console.log('Received blockchain is longer than current blockchain');
+                        replaceChain(receivedBlocks);
+                    }
+                } else {
+                    console.log('received blockchain is not longer than received blockchain. Do nothing');
+                }
+
+            });
         }
-    } else {
-        console.log('received blockchain is not longer than received blockchain. Do nothing');
+    }else{
+        //不是，正常验证
+        if (!isValidBlockStructure(latestBlockReceived)) {
+            console.log('block structuture not valid');
+            return;
+        }
+        const latestBlockHeld: Block = getLatestBlock();
+        if (latestBlockReceived.index > latestBlockHeld.index) {
+            console.log('blockchain possibly behind. We got: '
+                + latestBlockHeld.index + ' Peer got: ' + latestBlockReceived.index);
+            if (latestBlockHeld.hash === latestBlockReceived.previousHash) {
+                if (addBlockToChainChain(latestBlockReceived)) {
+                    broadcast(responseLatestMsg());
+                }
+            } else if (receivedBlocks.length === 1) {
+                console.log('We have to query the chain from our peer');
+                broadcast(queryAllMsg());
+            } else {
+                console.log('Received blockchain is longer than current blockchain');
+                replaceChain(receivedBlocks);
+            }
+        } else {
+            console.log('received blockchain is not longer than received blockchain. Do nothing');
+        }
+
     }
+
 };
 
 const broadcastLatest = (): void => {

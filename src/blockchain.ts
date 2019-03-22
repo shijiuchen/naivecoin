@@ -585,13 +585,13 @@ const generateNextBlock = () => {
         transactionPool[0].txOuts[0].address = getPublicFromWallet();
         console.log("transactionPool=" + JSON.stringify(transactionPool));
         if (name === "caffe") {
-            exec('bash /home/syc/naivecoin/start_caffe.sh', (err, stdout, stderr) => {
+            exec('bash /home/syc/eth-simulation/naivecoin/start_caffe.sh', (err, stdout, stderr) => {
                 var fs = require('fs');
-                var resPath = "/home/syc/naivecoin/resCaffe.txt";
+                var resPath = "/home/syc/eth-simulation/naivecoin/resCaffe.txt";
                 result = fs.readFileSync(resPath, "utf8");
                 console.log("result= " + result);
                 //获取任务执行结果之后，删除记录文件
-                fs.truncate('/home/syc/naivecoin/resCaffe.txt', 0, function () {
+                fs.truncate('/home/syc/eth-simulation/naivecoin/resCaffe.txt', 0, function () {
                     console.log('done')
                 });
 

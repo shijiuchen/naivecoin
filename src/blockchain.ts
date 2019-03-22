@@ -46,7 +46,7 @@ const genesisTransaction = {
         'LOCK' : false
     }],
     'id': 'e655f6a5f26dc9b4cac6e46f52336428287759cf81ef5ff10854f69d68f43fa3',
-    'code': null
+    'code': ''
 };
 //创世块
 const genesisBlock: Block = new Block(

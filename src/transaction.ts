@@ -56,11 +56,10 @@ const getTransactionId = (transaction: Transaction): string => {
         .map((txIn: TxIn) => txIn.txOutId + txIn.txOutIndex)
         .reduce((a, b) => a + b, '');
 
-    // const txOutContent: string = transaction.txOuts
-    //     .map((txOut: TxOut) => txOut.address + txOut.amount)
-    //     .reduce((a, b) => a + b, '');
-
-    return CryptoJS.SHA256(txInContent).toString();
+     const txOutContent: string = transaction.txOuts
+         .map((txOut: TxOut) => txOut.address + txOut.amount)
+         .reduce((a, b) => a + b, '');
+        return CryptoJS.SHA256(txInContent + txOutContent).toString();
 };
 
 const validateTransaction = (transaction: Transaction, aUnspentTxOuts: UnspentTxOut[]): boolean => {
@@ -69,10 +68,10 @@ const validateTransaction = (transaction: Transaction, aUnspentTxOuts: UnspentTx
         return false;
     }
 
-    if (getTransactionId(transaction) !== transaction.id) {
-        console.log('invalid tx id: ' + transaction.id);
-        return false;
-    }
+    // if (getTransactionId(transaction) !== transaction.id) {
+    //     console.log('invalid tx id: ' + transaction.id);
+    //     return false;
+    // }
     const hasValidTxIns: boolean = transaction.txIns
         .map((txIn) => validateTxIn(txIn, transaction, aUnspentTxOuts))
         .reduce((a, b) => a && b, true);
@@ -141,10 +140,10 @@ const validateCoinbaseTx = (transaction: Transaction, blockIndex: number): boole
         console.log('the first transaction in the block must be coinbase transaction');
         return false;
     }
-    if (getTransactionId(transaction) !== transaction.id) {
-        console.log('invalid coinbase tx id: ' + transaction.id);
-        return false;
-    }
+    // if (getTransactionId(transaction) !== transaction.id) {
+    //     console.log('invalid coinbase tx id: ' + transaction.id);
+    //     return false;
+    // }
     if (transaction.txIns.length !== 1) {
         console.log('one txIn must be specified in the coinbase transaction');
         return;

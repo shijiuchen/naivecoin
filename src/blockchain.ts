@@ -738,7 +738,6 @@ const isValidNewBlockBlock = (newBlock: Block, previousBlock: Block): boolean =>
                 fs.truncate('/home/syc/naivecoin/resCaffe.txt', 0, function () {
                     console.log('done')
                 });
-                return true;
             });
         } else if (name === "asylo") {
             exec('docker run  --rm \\\n' +
@@ -750,10 +749,11 @@ const isValidNewBlockBlock = (newBlock: Block, previousBlock: Block): boolean =>
                 //执行任务结果
                 result = stdout.toString();
                 console.log("result= " + result);
-                return true;
             });
         }
     }
+
+    return true;
 };
 
 const getAccumulatedDifficulty = (aBlockchain: Block[]): number => {

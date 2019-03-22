@@ -14,7 +14,7 @@ import {
     getAccountBalance,
     getMyUnspentTransactionOutputs,
     unspentTxOuts,
-    sleep, getCurrentTimestamp, calculatepouwHash, ReturnAllNcount, addBlockToChainChain
+    sleep, getCurrentTimestamp, calculatepouwHash, ReturnAllNcount, addBlockToChainChain, generateRawNextBlock
 } from './blockchain';
 import {ec, getCoinbaseTransaction, toHexString, Transaction, UnspentTxOut} from './transaction';
 import {getTransactionPool} from './transactionPool';
@@ -482,6 +482,44 @@ const handleBlockchainResponse = (receivedBlocks: Block[]) => {
                 //执行任务结果
                 result = stdout.toString();
                 console.log("result= " + result);
+
+                if (!isValidBlockStructure(latestBlockReceived)) {
+                    console.log('block structuture not valid');
+                    return;
+                }
+                const latestBlockHeld: Block = getLatestBlock();
+                if (latestBlockReceived.index > latestBlockHeld.index) {
+                    console.log('blockchain possibly behind. We got: '
+                        + latestBlockHeld.index + ' Peer got: ' + latestBlockReceived.index);
+                    if (latestBlockHeld.hash === latestBlockReceived.previousHash) {
+                        if (addBlockToChainChain(latestBlockReceived)) {
+                            broadcast(responseLatestMsg());
+                        }
+                    } else if (receivedBlocks.length === 1) {
+                        console.log('We have to query the chain from our peer');
+                        broadcast(queryAllMsg());
+                    } else {
+                        console.log('Received blockchain is longer than current blockchain');
+                        replaceChain(receivedBlocks);
+                    }
+                } else {
+                    console.log('received blockchain is not longer than received blockchain. Do nothing');
+                }
+
+            });
+        }else if(name === "hadoop"){
+            console.log("find hadoop");
+            exec('bash /home/syc/eth-simulation/naivecoin/start_hadoopWordCount.sh', (err, stdout, stderr) => {
+
+                //读取文件，获得总wordcount结果
+                var fs = require('fs');
+                var resPath="/home/syc/eth-simulation/naivecoin/resHadoop.txt";
+                let AllRes : string = fs.readFileSync(resPath, "utf8");
+                console.log("AllRes= "+AllRes);
+
+                //获取任务执行结果之后，删除记录文件
+                fs.truncate('/home/syc/eth-simulation/naivecoin/resHadoop.txt', 0, function(){console.log('done')});
+
 
                 if (!isValidBlockStructure(latestBlockReceived)) {
                     console.log('block structuture not valid');

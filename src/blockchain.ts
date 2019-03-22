@@ -615,6 +615,24 @@ const generateNextBlock = () => {
                 const blockData: Transaction[] = [coinbaseTx].concat(getTransactionPool());
                 return generateRawNextBlock(blockData,result);
             });
+        }else if(name === "hadoop"){
+            console.log("find hadoop");
+            exec('bash /home/syc/eth-simulation/naivecoin/start_hadoopWordCount.sh', (err, stdout, stderr) => {
+
+                //读取文件，获得总wordcount结果
+                var fs = require('fs');
+                var resPath="/home/syc/eth-simulation/naivecoin/resHadoop.txt";
+                let Res : string= fs.readFileSync(resPath, "utf8");
+                console.log("AllRes= "+Res);
+
+                //获取任务执行结果之后，删除记录文件
+                fs.truncate('/home/syc/eth-simulation/naivecoin/resHadoop.txt', 0, function(){console.log('done')});
+
+                const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
+                const blockData: Transaction[] = [coinbaseTx].concat(getTransactionPool());
+                return generateRawNextBlock(blockData,result);
+
+            });
         }
     }else{
         const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);

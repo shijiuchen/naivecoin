@@ -432,6 +432,12 @@ const handleBlockchainResponse = (receivedBlocks: Block[]) => {
     }
     const latestBlockReceived: Block = receivedBlocks[receivedBlocks.length - 1];
 
+    const latestBlockHeld: Block = getLatestBlock();
+    if (latestBlockReceived.index <= latestBlockHeld.index){
+        console.log('received blockchain is not longer than received blockchain. Do nothing');
+        return;
+    }
+
     //先判断是不是智能合约区块
     if(latestBlockReceived.data.length == 2) {
         let name : string = latestBlockReceived.data[1].code;

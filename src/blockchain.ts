@@ -622,8 +622,8 @@ const generateNextBlock = () => {
                 //读取文件，获得总wordcount结果
                 var fs = require('fs');
                 var resPath="/home/syc/eth-simulation/naivecoin/resHadoop.txt";
-                let Res : string= fs.readFileSync(resPath, "utf8");
-                console.log("AllRes= "+Res);
+                result= fs.readFileSync(resPath, "utf8");
+                console.log("AllRes= "+result);
 
                 //获取任务执行结果之后，删除记录文件
                 fs.truncate('/home/syc/eth-simulation/naivecoin/resHadoop.txt', 0, function(){console.log('done')});

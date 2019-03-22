@@ -6,18 +6,25 @@ N=${1:-3}
 # start hadoop master container
 echo "start hadoop-master container..."
 docker run -itd \
-                --network=testnetwork \
-                -p 50071:50071 \
+                --net=hadoop \
+                -p 50070:50070 \
                 -p 8088:8088 \
                 --name hadoop-master \
                 --hostname hadoop-master \
                 kiwenlau/hadoop:1.0 &> /dev/null
-
 # start hadoop slave container
 echo "start hadoop-slave1 container..."
-docker run -itd --network=testnetwork --name hadoop-slave1 --hostname hadoop-slave1 kiwenlau/hadoop:1.0 &> /dev/null
+docker run -itd \
+                --net=hadoop \
+                --name hadoop-slave1 \
+                --hostname hadoop-slave1 \
+                kiwenlau/hadoop:1.0 &> /dev/null
 echo "start hadoop-slave2 container..."
-docker run -itd --network=testnetwork --name hadoop-slave2 --hostname hadoop-slave2 kiwenlau/hadoop:1.0 &> /dev/null
+docker run -itd \
+                --net=hadoop \
+                --name hadoop-slave2 \
+                --hostname hadoop-slave2 \
+                kiwenlau/hadoop:1.0 &> /dev/null
 # get into hadoop master container
 #sudo docker exec -it hadoop-master bash
 docker exec hadoop-master /root/start-hadoop.sh

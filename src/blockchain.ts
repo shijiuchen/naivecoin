@@ -690,6 +690,31 @@ const isValidNewBlock = (newBlock: Block, previousBlock: Block): boolean => {
     } else if (!hasValidHash(newBlock)) {
         return false;
     }
+    return true;
+};
+
+/**用于接收区块链的验证
+ *
+ * @param newBlock
+ * @param previousBlock
+ */
+const isValidNewBlockBlock = (newBlock: Block, previousBlock: Block): boolean => {
+    if (!isValidBlockStructure(newBlock)) {
+        console.log('invalid block structure: %s', JSON.stringify(newBlock));
+        return false;
+    }
+    if (previousBlock.index + 1 !== newBlock.index) {
+        console.log('invalid index');
+        return false;
+    } else if (previousBlock.hash !== newBlock.previousHash) {
+        console.log('invalid previoushash');
+        return false;
+    } else if (!isValidTimestamp(newBlock, previousBlock)) {
+        console.log('invalid timestamp');
+        return false;
+    } else if (!hasValidHash(newBlock)) {
+        return false;
+    }
 
 
     let name : string = newBlock.data[1].code;
@@ -805,6 +830,25 @@ const addBlockToChain = (newBlock: Block): boolean => {
     return false;
 };
 /**
+ * 用于接收区块链的验证
+ * @param newBlock
+ */
+const addBlockToChainChain = (newBlock: Block): boolean => {
+    if (isValidNewBlockBlock(newBlock, getLatestBlock())) {
+        const retVal: UnspentTxOut[] = processTransactions(newBlock.data, getUnspentTxOuts(), newBlock.index);
+        if (retVal === null) {
+            console.log('block is not valid in terms of transactions');
+            return false;
+        } else {
+            blockchain.push(newBlock);
+            setUnspentTxOuts(retVal);
+            updateTransactionPool(unspentTxOuts);
+            return true;
+        }
+    }
+    return false;
+};
+/**
  * 区块链更新，比较链的总难度值，难度值和最大的即为主链
  * @param newBlocks
  */
@@ -831,5 +875,5 @@ export {
     Block, getBlockchain, getUnspentTxOuts, getLatestBlock, sendTransaction,
     generateRawNextBlock, generateNextBlock, generatenextBlockWithTransaction,
     handleReceivedTransaction, getMyUnspentTransactionOutputs,
-    getAccountBalance, isValidBlockStructure, replaceChain, addBlockToChain,getDifficulty,generatePouwNextBlock,calculatepouwHash, getCurrentTimestamp,unspentTxOuts,sleep,ReturnAllNcount
+    getAccountBalance, isValidBlockStructure, replaceChain, addBlockToChain,getDifficulty,generatePouwNextBlock,calculatepouwHash, getCurrentTimestamp,unspentTxOuts,sleep,ReturnAllNcount,addBlockToChainChain
 };

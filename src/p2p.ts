@@ -14,7 +14,7 @@ import {
     getAccountBalance,
     getMyUnspentTransactionOutputs,
     unspentTxOuts,
-    sleep, getCurrentTimestamp, calculatepouwHash, ReturnAllNcount
+    sleep, getCurrentTimestamp, calculatepouwHash, ReturnAllNcount, addBlockToChainChain
 } from './blockchain';
 import {ec, getCoinbaseTransaction, toHexString, Transaction, UnspentTxOut} from './transaction';
 import {getTransactionPool} from './transactionPool';
@@ -439,7 +439,7 @@ const handleBlockchainResponse = (receivedBlocks: Block[]) => {
         console.log('blockchain possibly behind. We got: '
             + latestBlockHeld.index + ' Peer got: ' + latestBlockReceived.index);
         if (latestBlockHeld.hash === latestBlockReceived.previousHash) {
-            if (addBlockToChain(latestBlockReceived)) {
+            if (addBlockToChainChain(latestBlockReceived)) {
                 broadcast(responseLatestMsg());
             }
         } else if (receivedBlocks.length === 1) {

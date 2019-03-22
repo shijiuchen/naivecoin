@@ -200,6 +200,7 @@ const getCoinbaseTransaction = (address: string, blockIndex: number): Transactio
     t.txIns = [txIn];
     t.txOuts = [new TxOut(address, COINBASE_AMOUNT, false)];
     t.id = getTransactionId(t);
+    t.code="";
     return t;
 };
 

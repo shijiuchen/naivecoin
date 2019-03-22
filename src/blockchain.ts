@@ -578,8 +578,10 @@ const getMyUnspentTransactionOutputs = () => {
 
 const generateNextBlock = () => {
     let result: string = "";
-    if(transactionPool!=null) {
+    console.log(transactionPool.length);
+    if(transactionPool.length != 0) {
         let name: string = transactionPool[0].code;
+        console.log("name="+name);
         transactionPool[0].txOuts[0].address = getPublicFromWallet();
         console.log("transactionPool=" + transactionPool);
         if (name === "caffe") {

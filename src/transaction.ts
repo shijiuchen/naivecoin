@@ -56,11 +56,11 @@ const getTransactionId = (transaction: Transaction): string => {
         .map((txIn: TxIn) => txIn.txOutId + txIn.txOutIndex)
         .reduce((a, b) => a + b, '');
 
-    const txOutContent: string = transaction.txOuts
-        .map((txOut: TxOut) => txOut.address + txOut.amount)
-        .reduce((a, b) => a + b, '');
+    // const txOutContent: string = transaction.txOuts
+    //     .map((txOut: TxOut) => txOut.address + txOut.amount)
+    //     .reduce((a, b) => a + b, '');
 
-    return CryptoJS.SHA256(txInContent + txOutContent).toString();
+    return CryptoJS.SHA256(txInContent).toString();
 };
 
 const validateTransaction = (transaction: Transaction, aUnspentTxOuts: UnspentTxOut[]): boolean => {

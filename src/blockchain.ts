@@ -583,7 +583,7 @@ const generateNextBlock = () => {
         let name: string = transactionPool[0].code;
         console.log("name="+name);
         transactionPool[0].txOuts[0].address = getPublicFromWallet();
-        console.log("transactionPool=" + transactionPool);
+        console.log("transactionPool=" + JSON.stringify(transactionPool));
         if (name === "caffe") {
             exec('bash /home/syc/naivecoin/start_caffe.sh', (err, stdout, stderr) => {
                 var fs = require('fs');
@@ -594,6 +594,10 @@ const generateNextBlock = () => {
                 fs.truncate('/home/syc/naivecoin/resCaffe.txt', 0, function () {
                     console.log('done')
                 });
+
+                const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
+                const blockData: Transaction[] = [coinbaseTx].concat(getTransactionPool());
+                return generateRawNextBlock(blockData,result);
             });
         } else if (name === "asylo") {
             exec('docker run  --rm \\\n' +
@@ -603,15 +607,20 @@ const generateNextBlock = () => {
                 '    gcr.io/asylo-framework/asylo \\\n' +
                 '    bazel run --config=enc-sim //quickstart -- --message="' + getDifficulty(getBlockchain()) + '"', (err, stdout, stderr) => {
                 //执行任务结果
+                console.log("stdout="+stdout);
                 result = stdout.toString();
                 console.log("result= " + result);
+
+                const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
+                const blockData: Transaction[] = [coinbaseTx].concat(getTransactionPool());
+                return generateRawNextBlock(blockData,result);
             });
         }
+    }else{
+        const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
+        const blockData: Transaction[] = [coinbaseTx].concat(getTransactionPool());
+        return generateRawNextBlock(blockData,result);
     }
-
-    const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
-    const blockData: Transaction[] = [coinbaseTx].concat(getTransactionPool());
-    return generateRawNextBlock(blockData,result);
 };
 
 const generatenextBlockWithTransaction = (receiverAddress: string, amount: number) => {
@@ -716,29 +725,32 @@ const isValidNewBlockBlock = (newBlock: Block, previousBlock: Block): boolean =>
         return false;
     }
 
-
-    let name : string = newBlock.data[1].code;
-    let result: string = "";
-    if(name === "caffe"){
-        exec('bash /home/syc/naivecoin/start_caffe.sh', (err, stdout, stderr) => {
-            var fs = require('fs');
-            var resPath="/home/syc/naivecoin/resCaffe.txt";
-            result = fs.readFileSync(resPath, "utf8");
-            console.log("result= "+result);
-            //获取任务执行结果之后，删除记录文件
-            fs.truncate('/home/syc/naivecoin/resCaffe.txt', 0, function(){console.log('done')});
-        });
-    }else if(name === "asylo"){
-        exec('docker run  --rm \\\n' +
-            '    -v bazel-cache:/root/.cache/bazel \\\n' +
-            '    -v "/home/syc/asylo-examples":/opt/my-project \\\n' +
-            '    -w /opt/my-project \\\n' +
-            '    gcr.io/asylo-framework/asylo \\\n' +
-            '    bazel run --config=enc-sim //quickstart -- --message="'+getDifficulty(getBlockchain())+'"', (err, stdout, stderr) => {
-            //执行任务结果
-            result = stdout.toString();
-            console.log("result= "+result);
-        });
+    if(newBlock.data.length == 2) {
+        let name : string = newBlock.data[1].code;
+        let result: string = "";
+        if (name === "caffe") {
+            exec('bash /home/syc/naivecoin/start_caffe.sh', (err, stdout, stderr) => {
+                var fs = require('fs');
+                var resPath = "/home/syc/naivecoin/resCaffe.txt";
+                result = fs.readFileSync(resPath, "utf8");
+                console.log("result= " + result);
+                //获取任务执行结果之后，删除记录文件
+                fs.truncate('/home/syc/naivecoin/resCaffe.txt', 0, function () {
+                    console.log('done')
+                });
+            });
+        } else if (name === "asylo") {
+            exec('docker run  --rm \\\n' +
+                '    -v bazel-cache:/root/.cache/bazel \\\n' +
+                '    -v "/home/syc/asylo-examples":/opt/my-project \\\n' +
+                '    -w /opt/my-project \\\n' +
+                '    gcr.io/asylo-framework/asylo \\\n' +
+                '    bazel run --config=enc-sim //quickstart -- --message="' + getDifficulty(getBlockchain()) + '"', (err, stdout, stderr) => {
+                //执行任务结果
+                result = stdout.toString();
+                console.log("result= " + result);
+            });
+        }
     }
 
     return true;

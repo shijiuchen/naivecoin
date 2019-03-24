@@ -24,7 +24,8 @@ import {getPublicFromWallet} from "./wallet";
 
 //一个节点连接就有一个socket
 const sockets: WebSocket[] = [];
-
+let moneyFrontend: string;
+let resultFrontend: string;
 enum MessageType {
     QUERY_LATEST = 0,
     QUERY_ALL = 1,
@@ -138,6 +139,9 @@ const initMessageHandler = (ws: WebSocket) => {
                     console.log("returnCount="+returnCount);
                     console.log("returnPK="+returnPK);
                     console.log("amount="+amount);
+
+                    resultFrontend=returnRes;
+
                     let timeReceived;
                     timeReceived=new Date().getTime();
                     console.log("return time= "+timeReceived);
@@ -170,6 +174,7 @@ const initMessageHandler = (ws: WebSocket) => {
                     let estiTime:string=returnInfo[5];
                     let money:string=returnInfo[6];
 
+                    moneyFrontend=money;
 
                     if(getAccountBalance() < parseInt(money)){//钱数不足,发送失败信息
                         console.log("The estimate amount is "+money);
@@ -345,6 +350,8 @@ const initMessageHandler = (ws: WebSocket) => {
 
                     console.log("resHadoop="+resHadoop);//将返还结果进行打印
 
+                    resultFrontend=resHadoop;
+
                     console.log("ncount1="+ncount1);
                     console.log("ncount2="+ncount2);
                     console.log("ncount3="+ncount3);
@@ -472,4 +479,16 @@ const broadCastTransactionPool = () => {
     broadcast(responseTransactionPoolMsg());
 };
 
-export {connectToPeers, broadcastLatest, broadCastTransactionPool, initP2PServer, getSockets, Message, MessageType,JSONToObject};
+const getMoneyFrontEnd = (): string =>{
+    let frmoney: string = moneyFrontend;
+    moneyFrontend= "";
+    return frmoney;
+};
+
+const getResultFrontEnd = (): string =>{
+    let frresult: string = resultFrontend;
+    resultFrontend = "";
+    return frresult;
+};
+
+export {connectToPeers, broadcastLatest, broadCastTransactionPool, initP2PServer, getSockets, Message, MessageType,JSONToObject,getMoneyFrontEnd,getResultFrontEnd};

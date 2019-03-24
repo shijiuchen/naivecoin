@@ -5,7 +5,7 @@ import {
     Block, generateNextBlock, generatenextBlockWithTransaction, generateRawNextBlock, getAccountBalance,
     getBlockchain, getMyUnspentTransactionOutputs, getUnspentTxOuts, sendTransaction
 } from './blockchain';
-import {connectToPeers, getSockets, initP2PServer} from './p2p';
+import {connectToPeers, getMoneyFrontEnd, getResultFrontEnd, getSockets, initP2PServer} from './p2p';
 import {UnspentTxOut} from './transaction';
 import {getTransactionPool} from './transactionPool';
 import {getPublicFromWallet, initWallet} from './wallet';
@@ -147,6 +147,14 @@ const initHttpServer = (myHttpPort: number) => {
 
     app.get('/getAlltasks', (req, res) => {
         res.send(agent.getAllTasks());
+    });
+
+    app.get('/getMoney', (req, res) => {
+        res.send(getMoneyFrontEnd());
+    });
+
+    app.get('/getResult', (req, res) => {
+        res.send(getResultFrontEnd());
     });
 
     app.post('/stop', (req, res) => {

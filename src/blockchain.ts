@@ -174,7 +174,11 @@ const generatePouwNextBlock = (message: Message ) => {
 
             //获取执行的有用功
             //延迟5秒，等待写入文件
+            let time1=new Date().getTime();
+            console.log("asylo task to read exen begin= "+time1);
             sleep(5000);
+            let time2=new Date().getTime();
+            console.log("asylo task to read exen done= "+time2);
             console.log("time out finished!");
 
             //读取文件，获得有用功
@@ -236,7 +240,11 @@ const generatePouwNextBlock = (message: Message ) => {
                 const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0, pouw);
                 const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0,pouw);
 
+
                 if (addBlockToChain(newBlock)) {
+
+                    let timeSend=new Date().getTime();
+                    console.log("asylo task execute done and make block time= "+timeSend);
 
                     broadcastLatest();
                     //return newBlock;
@@ -290,7 +298,11 @@ const generatePouwNextBlock = (message: Message ) => {
 
             //获取执行的有用功
             //延迟5秒，等待写入文件
+            let time1=new Date().getTime();
+            console.log("caffe task to read exen begin= "+time1);
             sleep(5000);
+            let time2=new Date().getTime();
+            console.log("caffe task to read exen done= "+time2);
             console.log("time out finished!");
 
             //读取文件，获得有用功
@@ -351,7 +363,12 @@ const generatePouwNextBlock = (message: Message ) => {
                 const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0, pouw);
                 const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0,pouw);
 
+
+
                 if (addBlockToChain(newBlock)) {
+
+                    let timeSend=new Date().getTime();
+                    console.log("caffe task execute done and make block time= "+timeSend);
 
                     broadcastLatest();
                     //return newBlock;
@@ -414,7 +431,11 @@ const generatePouwNextBlock = (message: Message ) => {
 
             //获取执行的有用功
             //延迟5秒，等待写入文件
+            let time1=new Date().getTime();
+            console.log("hadoop task master to read exen begin= "+time1);
             sleep(5000);
+            let time2=new Date().getTime();
+            console.log("hadoop task master to read exen done= "+time2);
             console.log("time out finished!");
 
             //读取文件，获得有用功
@@ -489,6 +510,9 @@ const generatePouwNextBlock = (message: Message ) => {
 
                 if (addBlockToChain(newBlock)) {
 
+                    let timeSend=new Date().getTime();
+                    console.log("hadoop task execute done and master node make block time= "+timeSend);
+
                     broadcastLatest();
                     //return newBlock;
 
@@ -515,8 +539,17 @@ const generatePouwNextBlock = (message: Message ) => {
                     console.log(information);
                     console.log(JSON.stringify(information));
                     s.send(JSON.stringify(information));
+
+                    let time1=new Date().getTime();
+                    console.log("REQUEST_NCOUNT delay time begin= "+time1);
+
                     sleep(50000);
+
+                    let time2=new Date().getTime();
+                    console.log("REQUEST_NCOUNT delay time done= "+time2);
+
                     console.log("REQUEST_NCOUNT finished!");
+
                 }
             });
 
@@ -544,6 +577,10 @@ const ReturnAllNcount = (message: Message) => {
         }
         console.log("keys="+keys);
         console.log("values="+values);
+
+        let timeSend=new Date().getTime();
+        console.log("all nodes exen got time= "+timeSend);
+
         getSockets().map((s: any) => {
             //console.log(s._socket.remoteAddress);
             let ip = s._socket.remoteAddress;

@@ -9,7 +9,7 @@ import {connectToPeers, getSockets, initP2PServer} from './p2p';
 import {UnspentTxOut} from './transaction';
 import {getTransactionPool} from './transactionPool';
 import {getPublicFromWallet, initWallet} from './wallet';
-import {Agent} from './agent';
+import {Agent, timeSend} from './agent';
 
 const httpPort: number = parseInt(process.env.HTTP_PORT) || 3001;
 const p2pPort: number = parseInt(process.env.P2P_PORT) || 6001;
@@ -141,6 +141,8 @@ const initHttpServer = (myHttpPort: number) => {
     });
 
     app.post('/schedulerTask', (req, res) => {
+        let timeSend=new Date().getTime();
+        console.log("user request time= "+timeSend);
         agent.requestUTXOlock(req.body.address,req.body.taskName,req.body.params,req.body.reqCPU,req.body.reqMEM,req.body.eltiTime);//将调用发布任务接口的节点ip进行传送
         res.send();
     });

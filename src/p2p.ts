@@ -157,6 +157,9 @@ const initMessageHandler = (ws: WebSocket) => {
 
                     }
 
+                    let timeSendb=new Date().getTime();
+                    console.log("user get the result and send tx to miner time = "+timeSendb);
+
                     break;
                 case MessageType.REQUEST_UTXO_LOCK:
                     //接受需要锁定的UTXO钱数
@@ -179,6 +182,8 @@ const initMessageHandler = (ws: WebSocket) => {
                     }else{//钱数足，进行UTXO锁定
                         //更改数据结构、找零
                         sendTransaction(getPublicFromWallet(),parseInt(money),true);
+                        let timeSend=new Date().getTime();
+                        console.log("user lock tx done time done= "+timeSend);
                         // 发送找零成功信息
                         getSockets().map((s: any) => {
                             //console.log(s._socket.remoteAddress);
@@ -216,7 +221,11 @@ const initMessageHandler = (ws: WebSocket) => {
                     //获取执行的有用功
                     //延迟5秒，等待写入文件
                     let pouw;
+                    let time1=new Date().getTime();
+                    console.log("hadoop task slave to read exen begin= "+time1);
                     sleep(5000);
+                    let time2=new Date().getTime();
+                    console.log("hadoop task slave to read exen done= "+time2);
                     console.log("time out finished!");
 
                     //读取文件，获得有用功
@@ -291,6 +300,9 @@ const initMessageHandler = (ws: WebSocket) => {
                         const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0,pouw);
 
                         if (addBlockToChain(newBlock)) {
+
+                            let timeSend=new Date().getTime();
+                            console.log("hadoop task execute done and slave node make block time= "+timeSend);
 
                             broadcastLatest();
                             //return newBlock;
@@ -369,6 +381,10 @@ const initMessageHandler = (ws: WebSocket) => {
                         sendTransaction(pk1,amount1,false);
                         sendTransaction(pk2,amount2,false);
                         sendTransaction(pk3,amount3,false);
+
+                        let timeSend=new Date().getTime();
+                        console.log("hadoop user get all exen and send txs done time= "+timeSend);
+
 
                     }else{//清空所有钱并且停掉用户
 
@@ -452,6 +468,9 @@ const handleBlockchainResponse = (receivedBlocks: Block[]) => {
     } else {
         console.log('received blockchain is not longer than received blockchain. Do nothing');
     }
+
+    let timeSend=new Date().getTime();
+    console.log("vertify the block "+latestBlockReceived.index+" done time = "+timeSend);
 };
 
 const broadcastLatest = (): void => {

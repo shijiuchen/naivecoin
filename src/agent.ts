@@ -104,8 +104,8 @@ class Agent {
      */
     public schedulerTask = (address: string,taskName: string, params: string, reqCPU: string, reqMEM: string, estiTime: string, money: string): void =>{
 
-        timeSend=new Date().getTime();
-        console.log("now time= "+timeSend);
+        // timeSend=new Date().getTime();
+        // console.log("now time= "+timeSend);
 
         //TODO 调度前对于交易池进行挖矿打包,现在是直接生成一个区块，并没有挖矿
         const previousBlock: Block = getLatestBlock();
@@ -134,6 +134,8 @@ class Agent {
         const resTxouts: TxOut=minedTxOuts.find((txout) => txout.LOCK===true && txout.amount===parseInt(money));
         console.log("resTxouts="+JSON.stringify(resTxouts));
         if(resTxouts!=null) {//确实存在这笔锁定的TxOut
+            let timeSend=new Date().getTime();
+            console.log("lock tx made to block done time= "+timeSend);
 
             console.log("Going into scheduling!");
 
@@ -148,6 +150,10 @@ class Agent {
                 });
                 console.log(information);
                 console.log(JSON.stringify(information));
+
+                let timeSendb=new Date().getTime();
+                console.log("scheduler done for multiply nodes time= "+timeSendb);
+
                 generatePouwNextBlock(information);
 
             }else {
@@ -210,6 +216,10 @@ class Agent {
                 // console.log(nodes);
                 //scheduling tasks in order
                 //调度到具体矿工节点
+
+                let timeSenda=new Date().getTime();
+                console.log("scheduler done for single node time= "+timeSenda);
+
                 let flag: boolean = false;//用于判断是否自己既是agent、又是任务执行者
                 getSockets().map((s: any) => {
                     //console.log(s._socket.remoteAddress);

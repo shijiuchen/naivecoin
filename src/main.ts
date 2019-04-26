@@ -10,7 +10,8 @@ import {
     getBlockchain, getexenFrontend,
     getMyUnspentTransactionOutputs, getresult_miner,
     getTasknameFrontend,
-    getTimeExecute,
+    getBeginTimeExecute,
+    getEndTimeExecute,
     getUnspentTxOuts,
     sendTransaction
 } from './blockchain';
@@ -168,8 +169,11 @@ const initHttpServer = (myHttpPort: number) => {
     app.get('/getTaskName', (req, res) => {
         res.send(getTasknameFrontend());
     });
-    app.get('/getTaskTime', (req, res) => {
-        res.send(getTimeExecute());
+    app.get('/getBeginTaskTime', (req, res) => {
+        res.send(getBeginTimeExecute().toString());
+    });
+    app.get('/getEndTaskTime', (req, res) => {
+        res.send(getEndTimeExecute().toString());
     });
     app.get('/getResult_miner', (req, res) => {
         res.send(getresult_miner());

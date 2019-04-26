@@ -14,7 +14,8 @@ import {All} from "tslint/lib/rules/completedDocsRule";
 let ncountMap=new Map<string,number>(); //用于记录分布式任务指令计数
 let AllRes;
 let taskNameFrontend;
-let timeExecute;
+let timeBegin;
+let timeEnd;
 let result_miner;
 let exenFrondend;
 class Block {
@@ -156,7 +157,7 @@ const generatePouwNextBlock = (message: Message ) => {
     const { exec } = require('child_process');
     console.log("tastname="+taskName);
 
-    let timeBegin = new Date().getTime();
+    timeBegin = new Date().getTime();
     console.log("task begin time= " + timeBegin);
 
     //进行任务类型判断
@@ -170,9 +171,8 @@ const generatePouwNextBlock = (message: Message ) => {
             '    bazel run --config=enc-sim //quickstart -- --message="'+getDifficulty(getBlockchain())+'"', (err, stdout, stderr) => {
             console.log("stdout="+stdout);
 
-            let timeEnd = new Date().getTime();
+            timeEnd = new Date().getTime();
             console.log("task end time= " + timeEnd);
-            timeExecute=timeEnd-timeBegin;
 
             // let returnInf: string[] = stdout.toString().split(';');
             // pouw = returnInf[0];
@@ -286,9 +286,8 @@ const generatePouwNextBlock = (message: Message ) => {
         console.log("find caffe");
         exec('bash /home/syc/naivecoin/start_caffe.sh', (err, stdout, stderr) => {
 
-            let timeEnd = new Date().getTime();
+            timeEnd = new Date().getTime();
             console.log("task end time= " + timeEnd);
-            timeExecute=timeEnd-timeBegin;
 
             // console.log("stdout="+stdout);
             // let returnInf: string[] = stdout.toString().split(';');
@@ -416,9 +415,8 @@ const generatePouwNextBlock = (message: Message ) => {
 
         exec('bash /home/syc/naivecoin/start_hadoopWordCount.sh', (err, stdout, stderr) => {
 
-            let timeEnd = new Date().getTime();
+            timeEnd = new Date().getTime();
             console.log("task end time= " + timeEnd);
-            timeExecute=timeEnd-timeBegin;
 
             // console.log("stdout="+stdout);
             // let returnInf: string[] = stdout.toString().split(';');
@@ -802,9 +800,14 @@ const getTasknameFrontend = (): string =>{
     taskNameFrontend = "";
     return frtaskName;
 };
-const getTimeExecute = (): string =>{
-    let frTime: string = timeExecute;
-    timeExecute = "";
+const getBeginTimeExecute = (): string =>{
+    let frTime: string = timeBegin;
+    timeBegin = "";
+    return frTime;
+};
+const getEndTimeExecute = (): string =>{
+    let frTime: string = timeEnd;
+    timeEnd = "";
     return frTime;
 };
 const getresult_miner = (): string =>{
@@ -821,5 +824,5 @@ export {
     Block, getBlockchain, getUnspentTxOuts, getLatestBlock, sendTransaction,
     generateRawNextBlock, generateNextBlock, generatenextBlockWithTransaction,
     handleReceivedTransaction, getMyUnspentTransactionOutputs,
-    getAccountBalance, isValidBlockStructure, replaceChain, addBlockToChain,getDifficulty,generatePouwNextBlock,calculatepouwHash, getCurrentTimestamp,unspentTxOuts,sleep,ReturnAllNcount,getTasknameFrontend,getTimeExecute,getresult_miner,getexenFrontend
+    getAccountBalance, isValidBlockStructure, replaceChain, addBlockToChain,getDifficulty,generatePouwNextBlock,calculatepouwHash, getCurrentTimestamp,unspentTxOuts,sleep,ReturnAllNcount,getTasknameFrontend,getBeginTimeExecute,getEndTimeExecute,getresult_miner,getexenFrontend
 };

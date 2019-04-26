@@ -13,6 +13,10 @@ import {All} from "tslint/lib/rules/completedDocsRule";
 
 let ncountMap=new Map<string,number>(); //用于记录分布式任务指令计数
 let AllRes;
+let taskNameFrontend;
+let timeExecute;
+let result_miner;
+let exenFrondend;
 class Block {
 
     public index: number;
@@ -141,6 +145,7 @@ const generatePouwNextBlock = (message: Message ) => {
     let params: string = information[1];
     let address: string = information[0];
     let taskName: string=information[2];//任务名字
+    taskNameFrontend=taskName;
 
     let pouw = "";
     let result = "";
@@ -150,6 +155,10 @@ const generatePouwNextBlock = (message: Message ) => {
     console.log(getDifficulty(getBlockchain()));
     const { exec } = require('child_process');
     console.log("tastname="+taskName);
+
+    let timeBegin = new Date().getTime();
+    console.log("task begin time= " + timeBegin);
+
     //进行任务类型判断
     if(taskName === "asylo"){
         console.log("find matrix");
@@ -160,10 +169,16 @@ const generatePouwNextBlock = (message: Message ) => {
             '    gcr.io/asylo-framework/asylo \\\n' +
             '    bazel run --config=enc-sim //quickstart -- --message="'+getDifficulty(getBlockchain())+'"', (err, stdout, stderr) => {
             console.log("stdout="+stdout);
+
+            let timeEnd = new Date().getTime();
+            console.log("task end time= " + timeEnd);
+            timeExecute=timeEnd-timeBegin;
+
             // let returnInf: string[] = stdout.toString().split(';');
             // pouw = returnInf[0];
             //执行任务结果
             result = stdout.toString();
+            result_miner=result;
             // ncount = returnInf[2];
             // let runTime = "";
             // runTime = returnInf[3];
@@ -182,6 +197,8 @@ const generatePouwNextBlock = (message: Message ) => {
             var path="/home/syc/naivecoin/log/result.txt";
             exeN = fs.readFileSync(path, "utf8");
             console.log("exeN="+exeN);
+
+            exenFrondend=exeN;
 
             //删除有用功记录文件
             fs.truncate('/home/syc/naivecoin/log/result.txt', 0, function(){console.log('done')});
@@ -268,6 +285,11 @@ const generatePouwNextBlock = (message: Message ) => {
     }else if(taskName === "caffe"){
         console.log("find caffe");
         exec('bash /home/syc/naivecoin/start_caffe.sh', (err, stdout, stderr) => {
+
+            let timeEnd = new Date().getTime();
+            console.log("task end time= " + timeEnd);
+            timeExecute=timeEnd-timeBegin;
+
             // console.log("stdout="+stdout);
             // let returnInf: string[] = stdout.toString().split(';');
             // pouw = returnInf[0];
@@ -284,6 +306,7 @@ const generatePouwNextBlock = (message: Message ) => {
             var resPath="/home/syc/naivecoin/resCaffe.txt";
             result = fs.readFileSync(resPath, "utf8");
             console.log("result= "+result);
+            result_miner=result;
 
             //获取任务执行结果之后，删除记录文件
             fs.truncate('/home/syc/naivecoin/resCaffe.txt', 0, function(){console.log('done')});
@@ -297,6 +320,8 @@ const generatePouwNextBlock = (message: Message ) => {
             var path="/home/syc/naivecoin/log/result.txt";
             exeN = fs.readFileSync(path, "utf8");
             console.log("exeN="+exeN);
+
+            exenFrondend=exeN;
 
             //删除有用功记录文件
             fs.truncate('/home/syc/naivecoin/log/result.txt', 0, function(){console.log('done')});
@@ -390,6 +415,11 @@ const generatePouwNextBlock = (message: Message ) => {
 
 
         exec('bash /home/syc/naivecoin/start_hadoopWordCount.sh', (err, stdout, stderr) => {
+
+            let timeEnd = new Date().getTime();
+            console.log("task end time= " + timeEnd);
+            timeExecute=timeEnd-timeBegin;
+
             // console.log("stdout="+stdout);
             // let returnInf: string[] = stdout.toString().split(';');
             // pouw = returnInf[0];
@@ -407,6 +437,7 @@ const generatePouwNextBlock = (message: Message ) => {
             var resPath="/home/syc/naivecoin/resHadoop.txt";
             AllRes = fs.readFileSync(resPath, "utf8");
             console.log("AllRes= "+AllRes);
+            result_miner=AllRes;
 
             //获取任务执行结果之后，删除记录文件
             fs.truncate('/home/syc/naivecoin/resHadoop.txt', 0, function(){console.log('done')});
@@ -766,10 +797,29 @@ const replaceChain = (newBlocks: Block[]) => {
 const handleReceivedTransaction = (transaction: Transaction) => {
     addToTransactionPool(transaction, getUnspentTxOuts());
 };
-
+const getTasknameFrontend = (): string =>{
+    let frtaskName: string = taskNameFrontend;
+    taskNameFrontend = "";
+    return frtaskName;
+};
+const getTimeExecute = (): string =>{
+    let frTime: string = timeExecute;
+    timeExecute = "";
+    return frTime;
+};
+const getresult_miner = (): string =>{
+    let frResult: string = result_miner;
+    result_miner = "";
+    return frResult;
+};
+const getexenFrontend = (): string =>{
+    let frExen: string = exenFrondend;
+    exenFrondend = "";
+    return frExen;
+};
 export {
     Block, getBlockchain, getUnspentTxOuts, getLatestBlock, sendTransaction,
     generateRawNextBlock, generateNextBlock, generatenextBlockWithTransaction,
     handleReceivedTransaction, getMyUnspentTransactionOutputs,
-    getAccountBalance, isValidBlockStructure, replaceChain, addBlockToChain,getDifficulty,generatePouwNextBlock,calculatepouwHash, getCurrentTimestamp,unspentTxOuts,sleep,ReturnAllNcount
+    getAccountBalance, isValidBlockStructure, replaceChain, addBlockToChain,getDifficulty,generatePouwNextBlock,calculatepouwHash, getCurrentTimestamp,unspentTxOuts,sleep,ReturnAllNcount,getTasknameFrontend,getTimeExecute,getresult_miner,getexenFrontend
 };

@@ -2,8 +2,17 @@ import * as  bodyParser from 'body-parser';
 import * as express from 'express';
 import * as _ from 'lodash';
 import {
-    Block, generateNextBlock, generatenextBlockWithTransaction, generateRawNextBlock, getAccountBalance,
-    getBlockchain, getMyUnspentTransactionOutputs, getUnspentTxOuts, sendTransaction
+    Block,
+    generateNextBlock,
+    generatenextBlockWithTransaction,
+    generateRawNextBlock,
+    getAccountBalance,
+    getBlockchain, getexenFrontend,
+    getMyUnspentTransactionOutputs, getresult_miner,
+    getTasknameFrontend,
+    getTimeExecute,
+    getUnspentTxOuts,
+    sendTransaction
 } from './blockchain';
 import {connectToPeers, getMoneyFrontEnd, getResultFrontEnd, getSockets, initP2PServer} from './p2p';
 import {UnspentTxOut} from './transaction';
@@ -155,6 +164,18 @@ const initHttpServer = (myHttpPort: number) => {
 
     app.get('/getResult', (req, res) => {
         res.send(getResultFrontEnd());
+    });
+    app.get('/getTaskName', (req, res) => {
+        res.send(getTasknameFrontend());
+    });
+    app.get('/getTaskTime', (req, res) => {
+        res.send(getTimeExecute());
+    });
+    app.get('/getResult_miner', (req, res) => {
+        res.send(getresult_miner());
+    });
+    app.get('/getSingleExen', (req, res) => {
+        res.send(getexenFrontend());
     });
 
     app.post('/stop', (req, res) => {

@@ -547,8 +547,10 @@ const generatePouwNextBlock = (message: Message ) => {
                     console.log(information);
                     console.log(JSON.stringify(information));
                     s.send(JSON.stringify(information));
-                    sleep(50000);
-                    console.log("REQUEST_NCOUNT finished!");
+                    if(ip == "192.168.1.119"){
+                        sleep(10000);
+                        console.log("REQUEST_NCOUNT finished!");
+                    }
                 }
             });
 
@@ -566,10 +568,6 @@ const ReturnAllNcount = (message: Message) => {
     console.log("size="+Object.keys(ncountMap).length);
     if(Object.keys(ncountMap).length == 3){
 
-        exenMaster=ncountMap["192.168.1.56"];
-        exenWorker1=ncountMap["192.168.1.119"];
-        exenWorker2=ncountMap["192.168.1.121"];
-
         let keys : string[] = [];
         let values : string[] = [];
         for(var k in ncountMap){
@@ -578,6 +576,11 @@ const ReturnAllNcount = (message: Message) => {
             values.push(ncountMap[k]);
 
         }
+
+        exenMaster=values[0];
+        exenWorker1=values[1];
+        exenWorker2=values[2];
+
         console.log("keys="+keys);
         console.log("values="+values);
         getSockets().map((s: any) => {

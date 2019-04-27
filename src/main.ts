@@ -183,13 +183,13 @@ const initHttpServer = (myHttpPort: number) => {
     });
 
     app.get('/getExenMaster', (req, res) => {
-        res.send(getexenMaster());
+        res.send(getexenMaster().toString());
     });
     app.get('/getExenWorker1', (req, res) => {
-        res.send(getexenWorker1());
+        res.send(getexenWorker1().toString());
     });
     app.get('/getExenWorker2', (req, res) => {
-        res.send(getexenWorker2());
+        res.send(getexenWorker2().toString());
     });
     app.get('/getExenWorker', (req, res) => {
         res.send(getExenWorker());

@@ -18,6 +18,9 @@ let timeBegin;
 let timeEnd;
 let result_miner;
 let exenFrondend;
+let exenMaster;
+let exenWorker1;
+let exenWorker2;
 class Block {
 
     public index: number;
@@ -563,6 +566,10 @@ const ReturnAllNcount = (message: Message) => {
     console.log("size="+Object.keys(ncountMap).length);
     if(Object.keys(ncountMap).length == 3){
 
+        exenMaster=ncountMap["192.168.1.56"];
+        exenWorker1=ncountMap["192.168.1.119"];
+        exenWorker2=ncountMap["192.168.1.121"];
+
         let keys : string[] = [];
         let values : string[] = [];
         for(var k in ncountMap){
@@ -820,9 +827,24 @@ const getexenFrontend = (): string =>{
     exenFrondend = "";
     return frExen;
 };
+const getexenMaster = (): string =>{
+    let frExenMaster: string = exenMaster;
+    exenMaster = "";
+    return frExenMaster;
+};
+const getexenWorker1 = (): string =>{
+    let frExenWorker1: string = exenWorker1;
+    exenWorker1 = "";
+    return frExenWorker1;
+};
+const getexenWorker2 = (): string =>{
+    let frExenWorker2: string = exenWorker2;
+    exenWorker2 = "";
+    return frExenWorker2;
+};
 export {
     Block, getBlockchain, getUnspentTxOuts, getLatestBlock, sendTransaction,
     generateRawNextBlock, generateNextBlock, generatenextBlockWithTransaction,
     handleReceivedTransaction, getMyUnspentTransactionOutputs,
-    getAccountBalance, isValidBlockStructure, replaceChain, addBlockToChain,getDifficulty,generatePouwNextBlock,calculatepouwHash, getCurrentTimestamp,unspentTxOuts,sleep,ReturnAllNcount,getTasknameFrontend,getBeginTimeExecute,getEndTimeExecute,getresult_miner,getexenFrontend
+    getAccountBalance, isValidBlockStructure, replaceChain, addBlockToChain,getDifficulty,generatePouwNextBlock,calculatepouwHash, getCurrentTimestamp,unspentTxOuts,sleep,ReturnAllNcount,getTasknameFrontend,getBeginTimeExecute,getEndTimeExecute,getresult_miner,getexenFrontend,getexenMaster,getexenWorker1,getexenWorker2
 };

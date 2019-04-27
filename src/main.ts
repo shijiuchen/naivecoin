@@ -13,9 +13,9 @@ import {
     getBeginTimeExecute,
     getEndTimeExecute,
     getUnspentTxOuts,
-    sendTransaction
+    sendTransaction, getexenMaster, getexenWorker1, getexenWorker2
 } from './blockchain';
-import {connectToPeers, getMoneyFrontEnd, getResultFrontEnd, getSockets, initP2PServer} from './p2p';
+import {connectToPeers, getExenWorker, getMoneyFrontEnd, getResultFrontEnd, getSockets, initP2PServer} from './p2p';
 import {UnspentTxOut} from './transaction';
 import {getTransactionPool} from './transactionPool';
 import {getPublicFromWallet, initWallet} from './wallet';
@@ -180,6 +180,19 @@ const initHttpServer = (myHttpPort: number) => {
     });
     app.get('/getSingleExen', (req, res) => {
         res.send(getexenFrontend());
+    });
+
+    app.get('/getExenMaster', (req, res) => {
+        res.send(getexenMaster());
+    });
+    app.get('/getExenWorker1', (req, res) => {
+        res.send(getexenWorker1());
+    });
+    app.get('/getExenWorker2', (req, res) => {
+        res.send(getexenWorker2());
+    });
+    app.get('/getExenWorker', (req, res) => {
+        res.send(getExenWorker());
     });
 
     app.post('/stop', (req, res) => {

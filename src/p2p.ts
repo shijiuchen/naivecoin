@@ -26,6 +26,7 @@ import {getPublicFromWallet} from "./wallet";
 const sockets: WebSocket[] = [];
 let moneyFrontend: string;
 let resultFrontend: string;
+let exenWorker;
 enum MessageType {
     QUERY_LATEST = 0,
     QUERY_ALL = 1,
@@ -241,6 +242,7 @@ const initMessageHandler = (ws: WebSocket) => {
                     }
 
                     let exeN=sum.toString();
+                    exenWorker=exeN;
 
                     //删除有用功记录文件
                     fs.truncate('/home/syc/naivecoin/log/result.txt', 0, function(){console.log('done')});
@@ -491,4 +493,10 @@ const getResultFrontEnd = (): string =>{
     return frresult;
 };
 
-export {connectToPeers, broadcastLatest, broadCastTransactionPool, initP2PServer, getSockets, Message, MessageType,JSONToObject,getMoneyFrontEnd,getResultFrontEnd};
+const getExenWorker = (): string =>{
+    let frExenWorker: string = exenWorker;
+    exenWorker = "";
+    return frExenWorker;
+};
+
+export {connectToPeers, broadcastLatest, broadCastTransactionPool, initP2PServer, getSockets, Message, MessageType,JSONToObject,getMoneyFrontEnd,getResultFrontEnd,getExenWorker};

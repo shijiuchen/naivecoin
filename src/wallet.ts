@@ -97,12 +97,12 @@ const findTxOutsForAmount = (amount: number, myUnspentTxOuts: UnspentTxOut[]) =>
  * @param amount
  * @param leftOverAmount
  */
-const createTxOuts = (receiverAddress: string, myAddress: string, amount, leftOverAmount: number, isLOCK: boolean) => {
-    const txOut1: TxOut = new TxOut(receiverAddress, amount, isLOCK);
+const createTxOuts = (receiverAddress: string, myAddress: string, amount, leftOverAmount: number, isLOCK: boolean, codeHash: string) => {
+    const txOut1: TxOut = new TxOut(receiverAddress, amount, isLOCK,codeHash);
     if (leftOverAmount === 0) {
         return [txOut1];
     } else {
-        const leftOverTx = new TxOut(myAddress, leftOverAmount, false);
+        const leftOverTx = new TxOut(myAddress, leftOverAmount, false,"");
         return [txOut1, leftOverTx];
     }
 };
@@ -140,7 +140,7 @@ const filterTxPoolTxs = (unspentTxOuts: UnspentTxOut[], transactionPool: Transac
  * @param txPool
  */
 const createTransaction = (receiverAddress: string, amount: number, privateKey: string,
-                           unspentTxOuts: UnspentTxOut[], txPool: Transaction[], isLOCK: boolean): Transaction => {
+                           unspentTxOuts: UnspentTxOut[], txPool: Transaction[], isLOCK: boolean, codeHash: string): Transaction => {
 
     console.log('txPool: %s', JSON.stringify(txPool));
     const myAddress: string = getPublicKey(privateKey);
@@ -164,7 +164,7 @@ const createTransaction = (receiverAddress: string, amount: number, privateKey: 
 
     const tx: Transaction = new Transaction();
     tx.txIns = unsignedTxIns;
-    tx.txOuts = createTxOuts(receiverAddress, myAddress, amount, leftOverAmount, isLOCK);
+    tx.txOuts = createTxOuts(receiverAddress, myAddress, amount, leftOverAmount, isLOCK, codeHash);
     tx.id = getTransactionId(tx);
 
     tx.txIns = tx.txIns.map((txIn: TxIn, index: number) => {

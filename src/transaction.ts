@@ -12,13 +12,15 @@ class UnspentTxOut {
     public readonly address: string;
     public readonly amount: number;
     public LOCK: boolean;//增加字段该笔UTXO是否被锁定
+    public codeHash: string;//增加字段为锁定任务代码hash值
 
-    constructor(txOutId: string, txOutIndex: number, address: string, amount: number, LOCK: boolean) {
+    constructor(txOutId: string, txOutIndex: number, address: string, amount: number, LOCK: boolean, codeHash: string) {
         this.txOutId = txOutId;
         this.txOutIndex = txOutIndex;
         this.address = address;
         this.amount = amount;
         this.LOCK=LOCK;
+        this.codeHash=codeHash;
     }
 }
 
@@ -32,11 +34,13 @@ class TxOut {
     public address: string;
     public amount: number;
     public LOCK: boolean;//增加字段该笔UTXO是否被锁定
+    public codeHash: string;//增加字段为锁定任务代码hash值
 
-    constructor(address: string, amount: number, LOCK: boolean) {
+    constructor(address: string, amount: number, LOCK: boolean, codeHash: string) {
         this.address = address;
         this.amount = amount;
         this.LOCK=LOCK;
+        this.codeHash=codeHash;
     }
 }
 
@@ -195,7 +199,7 @@ const getCoinbaseTransaction = (address: string, blockIndex: number): Transactio
     txIn.txOutIndex = blockIndex;
 
     t.txIns = [txIn];
-    t.txOuts = [new TxOut(address, COINBASE_AMOUNT, false)];
+    t.txOuts = [new TxOut(address, COINBASE_AMOUNT, false,"")];
     t.id = getTransactionId(t);
     return t;
 };
@@ -226,14 +230,14 @@ const signTxIn = (transaction: Transaction, txInIndex: number,
 const updateUnspentTxOuts = (aTransactions: Transaction[], aUnspentTxOuts: UnspentTxOut[]): UnspentTxOut[] => {
     const newUnspentTxOuts: UnspentTxOut[] = aTransactions
         .map((t) => {
-            return t.txOuts.map((txOut, index) => new UnspentTxOut(t.id, index, txOut.address, txOut.amount,txOut.LOCK));
+            return t.txOuts.map((txOut, index) => new UnspentTxOut(t.id, index, txOut.address, txOut.amount,txOut.LOCK,txOut.codeHash));
         })
         .reduce((a, b) => a.concat(b), []);
 
     const consumedTxOuts: UnspentTxOut[] = aTransactions
         .map((t) => t.txIns)
         .reduce((a, b) => a.concat(b), [])
-        .map((txIn) => new UnspentTxOut(txIn.txOutId, txIn.txOutIndex, '', 0, false));
+        .map((txIn) => new UnspentTxOut(txIn.txOutId, txIn.txOutIndex, '', 0, false,""));
 
     const resultingUnspentTxOuts = aUnspentTxOuts
         .filter(((uTxO) => !findUnspentTxOut(uTxO.txOutId, uTxO.txOutIndex, consumedTxOuts)))

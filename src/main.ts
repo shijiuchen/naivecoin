@@ -116,11 +116,12 @@ const initHttpServer = (myHttpPort: number) => {
             const address = req.body.address;
             const amount = req.body.amount;
             const isLOCK = req.body.isLOCK;
+            const codeHash = req.body.codeHash;
 
             if (address === undefined || amount === undefined) {
                 throw Error('invalid address or amount');
             }
-            const resp = sendTransaction(address, amount, isLOCK);
+            const resp = sendTransaction(address, amount, isLOCK, codeHash);
             res.send(resp);
         } catch (e) {
             console.log(e.message);

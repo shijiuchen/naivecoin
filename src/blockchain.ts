@@ -18,6 +18,8 @@ import {readFile, readFileSync} from "fs";
 import {All} from "tslint/lib/rules/completedDocsRule";
 // import {Message} from "_debugger";
 let ncountMap=new Map<string,number>(); //用于记录分布式任务指令计数
+let reportMap=new Map<string,string>(); //用于记录分布式任务report
+let proofMap=new Map<string,string>(); //用于记录分布式任务proof
 let AllRes;
 let taskNameFrontend;
 let timeBegin;
@@ -63,7 +65,10 @@ const genesisTransaction = {
         'LOCK' : false,
         'codeHash': ''
     }],
-    'id': 'e655f6a5f26dc9b4cac6e46f52336428287759cf81ef5ff10854f69d68f43fa3'
+    'id': 'e655f6a5f26dc9b4cac6e46f52336428287759cf81ef5ff10854f69d68f43fa3',
+    'report': '',
+    'proof': '',
+    'workload': 0
 };
 //创世块
 const genesisBlock: Block = new Block(
@@ -218,6 +223,11 @@ const generatePouwNextBlock = (message: Message ) => {
             //删除有用功记录文件
             fs.truncate('/home/syc/naivecoin/log/result.txt', 0, function(){console.log('done')});
 
+            //生成任务执行随机公私钥对
+            const keyPair = ec.genKeyPair();
+            let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
+            let pk: string=ec.keyFromPrivate(sk, 'hex').getPublic().encode('hex');//随机生成公钥
+
             //判断是否有出块条件
             let SRNG1 : number=Math.floor(Math.random()*999+1);
             let SRNG2 : number=1000;
@@ -225,9 +235,6 @@ const generatePouwNextBlock = (message: Message ) => {
             if(getDifficulty(getBlockchain()) == 0) {
 
                 //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
-                const keyPair = ec.genKeyPair();
-                let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
-                let pk: string=ec.keyFromPrivate(sk, 'hex').getPublic().encode('hex');//随机生成公钥
 
                 report= CryptoJS.SHA256("asylo").toString()+";"+pk;//report 是随机生成的公钥+代码哈希
                 const key1 = ec.keyFromPrivate(sk, 'hex');
@@ -246,9 +253,6 @@ const generatePouwNextBlock = (message: Message ) => {
                 if(Prob > SRNG) {
 
                     //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
-                    const keyPair = ec.genKeyPair();
-                    let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
-                    let pk: string=ec.keyFromPrivate(sk, 'hex').getPublic().encode('hex');//随机生成公钥
                     report= CryptoJS.SHA256("asylo").toString()+";"+pk;//report 是随机生成的公钥+代码哈希
                     const key1 = ec.keyFromPrivate(sk, 'hex');
                     pouw = toHexString(key1.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
@@ -293,6 +297,10 @@ const generatePouwNextBlock = (message: Message ) => {
 
             }
 
+            const key1 = ec.keyFromPrivate(sk, 'hex');
+            let proofTX=toHexString(key1.sign(CryptoJS.SHA256(exeN+getPublicFromWallet()).toString()).toDER());
+
+
             //任务结果返还给用户，以及执行任务矿工节点的公钥
             getSockets().map((s: any) => {
                 //console.log(s._socket.remoteAddress);
@@ -301,7 +309,7 @@ const generatePouwNextBlock = (message: Message ) => {
                     ip = s._socket.remoteAddress.substr(7)
                 }
                 if(ip == address){
-                    let information : Message = ({'type': MessageType.RESULT, 'data': result+'?'+exeN.toString()+'?'+getPublicFromWallet()});
+                    let information : Message = ({'type': MessageType.RESULT, 'data': result+'?'+exeN.toString()+'?'+getPublicFromWallet()+'?'+report+'?'+proofTX});
                     console.log(information);
                     console.log(JSON.stringify(information));
                     s.send(JSON.stringify(information));
@@ -352,15 +360,17 @@ const generatePouwNextBlock = (message: Message ) => {
             //删除有用功记录文件
             fs.truncate('/home/syc/naivecoin/log/result.txt', 0, function(){console.log('done')});
 
+            //生成任务执行随机公私钥对
+            const keyPair = ec.genKeyPair();
+            let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
+            let pk: string=ec.keyFromPrivate(sk, 'hex').getPublic().encode('hex');//随机生成公钥
+
             //判断是否有出块条件
             let SRNG1 : number=Math.floor(Math.random()*999+1);
             let SRNG2 : number=1000;
             let SRNG : number = SRNG1 / SRNG2;
             if(getDifficulty(getBlockchain()) == 0) {
 
-                const keyPair = ec.genKeyPair();
-                let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
-                let pk: string=ec.keyFromPrivate(sk, 'hex').getPublic().encode('hex');//随机生成公钥
                 report= CryptoJS.SHA256("caffe").toString()+";"+pk;//report 是随机生成的公钥+代码哈希
                 const key1 = ec.keyFromPrivate(sk, 'hex');
                 pouw = toHexString(key1.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
@@ -378,9 +388,6 @@ const generatePouwNextBlock = (message: Message ) => {
                 if(Prob > SRNG) {
 
                     //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
-                    const keyPair = ec.genKeyPair();
-                    let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
-                    let pk: string=ec.keyFromPrivate(sk, 'hex').getPublic().encode('hex');//随机生成公钥
                     report= CryptoJS.SHA256("caffe").toString()+";"+pk;//report 是随机生成的公钥+代码哈希
                     const key1 = ec.keyFromPrivate(sk, 'hex');
                     pouw = toHexString(key1.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
@@ -424,6 +431,9 @@ const generatePouwNextBlock = (message: Message ) => {
 
             }
 
+            const key1 = ec.keyFromPrivate(sk, 'hex');
+            let proofTX=toHexString(key1.sign(CryptoJS.SHA256(exeN).toString()+getPublicFromWallet()).toDER());
+
             //任务结果返还给用户，以及执行任务矿工节点的公钥
             getSockets().map((s: any) => {
                 //console.log(s._socket.remoteAddress);
@@ -432,7 +442,7 @@ const generatePouwNextBlock = (message: Message ) => {
                     ip = s._socket.remoteAddress.substr(7)
                 }
                 if(ip == address){
-                    let information : Message = ({'type': MessageType.RESULT, 'data': result+'?'+exeN.toString()+'?'+getPublicFromWallet()});
+                    let information : Message = ({'type': MessageType.RESULT, 'data': result+'?'+exeN.toString()+'?'+getPublicFromWallet()+'?'+report+'?'+proofTX});
                     console.log(information);
                     console.log(JSON.stringify(information));
                     s.send(JSON.stringify(information));
@@ -502,6 +512,10 @@ const generatePouwNextBlock = (message: Message ) => {
             //删除有用功记录文件
             fs.truncate('/home/syc/naivecoin/log/result.txt', 0, function(){console.log('done')});
 
+            //生成任务执行随机公私钥对
+            const keyPair = ec.genKeyPair();
+            let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
+            let pk: string=ec.keyFromPrivate(sk, 'hex').getPublic().encode('hex');//随机生成公钥
 
             let SRNG1 : number=Math.floor(Math.random()*999+1);
             let SRNG2 : number=1000;
@@ -510,9 +524,6 @@ const generatePouwNextBlock = (message: Message ) => {
             if(getDifficulty(getBlockchain()) == 0) {
 
                 //模拟使用intel私钥进行签名，签署result+exeN+关键字"SUCCESS"
-                const keyPair = ec.genKeyPair();
-                let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
-                let pk: string=ec.keyFromPrivate(sk, 'hex').getPublic().encode('hex');//随机生成公钥
                 report= CryptoJS.SHA256("hadoop_master").toString()+";"+pk;//report 是随机生成的公钥+代码哈希
                 const key = ec.keyFromPrivate(sk, 'hex');
                 pouw = toHexString(key.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
@@ -530,9 +541,6 @@ const generatePouwNextBlock = (message: Message ) => {
                 if(Prob > SRNG) {
 
                     //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
-                    const keyPair = ec.genKeyPair();
-                    let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
-                    let pk: string=ec.keyFromPrivate(sk, 'hex').getPublic().encode('hex');//随机生成公钥
                     report= CryptoJS.SHA256("hadoop_master").toString()+";"+pk;//report 是随机生成的公钥+代码哈希
                     const key1 = ec.keyFromPrivate(sk, 'hex');
                     pouw = toHexString(key1.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
@@ -576,8 +584,13 @@ const generatePouwNextBlock = (message: Message ) => {
 
             }
 
-            //将master的有用功存入map
+            const key1 = ec.keyFromPrivate(sk, 'hex');
+            let proofTX=toHexString(key1.sign(CryptoJS.SHA256(exeN+getPublicFromWallet()).toString()).toDER());
+
+            //将master的有用功\report\proof存入map
             ncountMap[getPublicFromWallet()]=parseInt(exeN);
+            reportMap[getPublicFromWallet()]=report;
+            proofMap[getPublicFromWallet()]=proofTX;
 
             //发送消息请求获取指令计数
             getSockets().map((s: any) => {
@@ -608,7 +621,11 @@ const generatePouwNextBlock = (message: Message ) => {
 const ReturnAllNcount = (message: Message) => {
     let information: string[]=message.data.toString().split(":");
     ncountMap[information[0]]=parseInt(information[1]);
+    reportMap[information[0]]=information[3];
+    proofMap[information[0]]=information[4];
     console.log("ncountMap="+JSON.stringify(ncountMap));
+    console.log("reportMap="+JSON.stringify(reportMap));
+    console.log("proofMap="+JSON.stringify(proofMap));
     console.log("size="+Object.keys(ncountMap).length);
     if(Object.keys(ncountMap).length == 3){
 
@@ -627,6 +644,25 @@ const ReturnAllNcount = (message: Message) => {
 
         console.log("keys="+keys);
         console.log("values="+values);
+
+        let keys1 : string[] = [];
+        let values1 : string[] = [];
+        for(var k in reportMap){
+
+            keys1.push(k);
+            values1.push(reportMap[k]);
+
+        }
+
+        let keys2 : string[] = [];
+        let values2 : string[] = [];
+        for(var k in proofMap){
+
+            keys2.push(k);
+            values2.push(proofMap[k]);
+
+        }
+
         getSockets().map((s: any) => {
             //console.log(s._socket.remoteAddress);
             let ip = s._socket.remoteAddress;
@@ -635,7 +671,7 @@ const ReturnAllNcount = (message: Message) => {
             }
             if(ip == information[2].toString()){
                 let information : Message = ({'type': MessageType.RESULTAllNODES, 'data': keys[0]+":"+values[0]+":"+
-                        keys[1]+":"+values[1]+":"+keys[2]+":"+values[2]+":"+AllRes});
+                        keys[1]+":"+values[1]+":"+keys[2]+":"+values[2]+":"+AllRes+":"+values1[0]+":"+values1[1]+":"+values1[2]+":"+values2[0]+":"+values2[1]+":"+values2[2]});
                 console.log(information);
                 console.log(JSON.stringify(information));
                 s.send(JSON.stringify(information));
@@ -671,7 +707,7 @@ const generatenextBlockWithTransaction = (receiverAddress: string, amount: numbe
         throw Error('invalid amount');
     }
     const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
-    const tx: Transaction = createTransaction(receiverAddress, amount, getPrivateFromWallet(), getUnspentTxOuts(), getTransactionPool(),false,"");
+    const tx: Transaction = createTransaction(receiverAddress, amount, getPrivateFromWallet(), getUnspentTxOuts(), getTransactionPool(),false,"","","",0);
     const blockData: Transaction[] = [coinbaseTx, tx];
     return generateRawNextBlock(blockData);
 };
@@ -699,8 +735,8 @@ const getAccountBalance = (): number => {
     return getBalance(getPublicFromWallet(), getUnspentTxOuts());
 };
 
-const sendTransaction = (address: string, amount: number, isLOCK: boolean, codeHash: string): Transaction => {
-    const tx: Transaction = createTransaction(address, amount, getPrivateFromWallet(), getUnspentTxOuts(), getTransactionPool(),isLOCK,codeHash);
+const sendTransaction = (address: string, amount: number, isLOCK: boolean, codeHash: string, report: string, proof: string,workload: number): Transaction => {
+    const tx: Transaction = createTransaction(address, amount, getPrivateFromWallet(), getUnspentTxOuts(), getTransactionPool(),isLOCK,codeHash,report,proof,workload);
     addToTransactionPool(tx, getUnspentTxOuts());
     broadCastTransactionPool();
     return tx;

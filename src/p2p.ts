@@ -135,12 +135,16 @@ const initMessageHandler = (ws: WebSocket) => {
                     let returnCount: string = returnMes[1];
                     let returnRes: string = returnMes[0];
                     let returnPK: string = returnMes[2];
+                    let returnReport: string = returnMes[3];
+                    let returnProof: string = returnMes[4];
                     let amount=Math.trunc(Math.cbrt(parseInt(returnCount)));
                     //let amount=parseInt(returnCount);
                     console.log("returnRes=");//将返还结果进行打印
                     console.log("returnCount="+returnCount);
                     console.log("returnPK="+returnPK);
                     console.log("amount="+amount);
+                    console.log("returnReport="+returnReport);
+                    console.log("returnProof="+returnProof);
 
                     resultFrontend=returnRes;
 
@@ -150,18 +154,18 @@ const initMessageHandler = (ws: WebSocket) => {
                     console.log("execution time= "+ (parseInt(timeReceived)-parseInt(timeSend)));
                     //sendTransaction(returnPK,Math.ceil(parseInt(returnCount)/100));
                     //进行锁定交易的解锁
-                    let pos = unspentTxOuts.findIndex(item => {
-                        return item.LOCK==true && item.address===getPublicFromWallet();//TODO 有点问题
-                    });
-                    if(unspentTxOuts[pos].amount >= amount || getAccountBalance() >= amount){//预估大于实际 或者账户的钱够用,直接解锁
-                        unspentTxOuts[pos].LOCK=false;
-                        sendTransaction(returnPK,amount,false,"");
-                    }else{//清空所有钱并且停掉用户
-                        //TODO 将欠款数额，被欠款人地址，欠款人地址发送给agent ，，这种情况不容易出现，暂时不写
-                        let arrears: number = amount-getAccountBalance();//得到欠款
-                        sendTransaction(returnPK,getAccountBalance(),false,"");//将账户中所有的钱发给任务执行方
-
-                    }
+                    // let pos = unspentTxOuts.findIndex(item => {
+                    //     return item.LOCK==true && item.address===getPublicFromWallet();//TODO 有点问题
+                    // });
+                    // if(unspentTxOuts[pos].amount >= amount || getAccountBalance() >= amount){//预估大于实际 或者账户的钱够用,直接解锁
+                    //     unspentTxOuts[pos].LOCK=false;
+                        sendTransaction(returnPK,amount,false,"",returnReport,returnProof,parseInt(returnCount));
+                    // }else{//清空所有钱并且停掉用户
+                    //     //TODO 将欠款数额，被欠款人地址，欠款人地址发送给agent ，，这种情况不容易出现，暂时不写
+                    //     let arrears: number = amount-getAccountBalance();//得到欠款
+                    //     sendTransaction(returnPK,getAccountBalance(),false,"");//将账户中所有的钱发给任务执行方
+                    //
+                    // }
 
                     break;
                 case MessageType.REQUEST_UTXO_LOCK:
@@ -185,7 +189,7 @@ const initMessageHandler = (ws: WebSocket) => {
 
                     }else{//钱数足，进行UTXO锁定
                         //更改数据结构、找零
-                        sendTransaction(getPublicFromWallet(),parseInt(money),true, CryptoJS.SHA256(taskName).toString());
+                        sendTransaction(getPublicFromWallet(),parseInt(money),true, CryptoJS.SHA256(taskName).toString(),'','',0);
                         // 发送找零成功信息
                         getSockets().map((s: any) => {
                             //console.log(s._socket.remoteAddress);
@@ -249,6 +253,9 @@ const initMessageHandler = (ws: WebSocket) => {
                     //删除有用功记录文件
                     fs.truncate('/home/syc/naivecoin/log/result.txt', 0, function(){console.log('done')});
 
+                    const keyPair = ec.genKeyPair();
+                    let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
+                    let pk: string=ec.keyFromPrivate(sk, 'hex').getPublic().encode('hex');//随机生成公钥
                     //判断是否有出块条件
                     let SRNG1 : number=Math.floor(Math.random()*999+1);
                     let SRNG2 : number=1000;
@@ -256,9 +263,6 @@ const initMessageHandler = (ws: WebSocket) => {
                     if(getDifficulty(getBlockchain()) == 0) {
 
                         //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
-                        const keyPair = ec.genKeyPair();
-                        let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
-                        let pk: string=ec.keyFromPrivate(sk, 'hex').getPublic().encode('hex');//随机生成公钥
                         report= CryptoJS.SHA256("hadoop_slave").toString()+";"+pk;//report 是随机生成的公钥+代码哈希
                         const key = ec.keyFromPrivate(sk, 'hex');
                         pouw = toHexString(key.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
@@ -275,9 +279,6 @@ const initMessageHandler = (ws: WebSocket) => {
                         if(Prob > SRNG) {
 
                             //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
-                            const keyPair = ec.genKeyPair();
-                            let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
-                            let pk: string=ec.keyFromPrivate(sk, 'hex').getPublic().encode('hex');//随机生成公钥
                             report= CryptoJS.SHA256("hadoop_slave").toString()+";"+pk;//report 是随机生成的公钥+代码哈希
                             const key = ec.keyFromPrivate(sk, 'hex');
                             pouw = toHexString(key.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
@@ -321,6 +322,9 @@ const initMessageHandler = (ws: WebSocket) => {
 
                     }
 
+                    const key = ec.keyFromPrivate(sk, 'hex');
+                    let proofTX = toHexString(key.sign(CryptoJS.SHA256(exeN+getPublicFromWallet()).toString()).toDER());
+
                     getSockets().map((s: any) => {
                         //console.log(s._socket.remoteAddress);
                         let ip = s._socket.remoteAddress;
@@ -328,7 +332,7 @@ const initMessageHandler = (ws: WebSocket) => {
                             ip = s._socket.remoteAddress.substr(7)
                         }
                         if(ip == "192.168.1.56"){
-                            let information : Message = ({'type': MessageType.RES_NCOUNT, 'data': getPublicFromWallet()+":"+exeN+":"+message.data.toString()});
+                            let information : Message = ({'type': MessageType.RES_NCOUNT, 'data': getPublicFromWallet()+":"+exeN+":"+message.data.toString()+":"+report+":"+proofTX});
                             console.log(information);
                             console.log(JSON.stringify(information));
                             s.send(JSON.stringify(information));
@@ -356,6 +360,12 @@ const initMessageHandler = (ws: WebSocket) => {
                     let pk3 : string = ResAllNodesAmount[4];
                     let ncount3 : string = ResAllNodesAmount[5];
                     let resHadoop : string= ResAllNodesAmount[6];
+                    let resReport1 : string = ResAllNodesAmount[7];
+                    let resReport2 : string = ResAllNodesAmount[8];
+                    let resReport3 : string = ResAllNodesAmount[9];
+                    let resProof1 : string = ResAllNodesAmount[10];
+                    let resProof2 : string = ResAllNodesAmount[11];
+                    let resProof3 : string = ResAllNodesAmount[12];
 
                     let amount1=Math.trunc(Math.cbrt(parseInt(ncount1)));
                     let amount2=Math.trunc(Math.cbrt(parseInt(ncount2)));
@@ -378,25 +388,25 @@ const initMessageHandler = (ws: WebSocket) => {
                     console.log("amount3="+amount3);
 
                     //进行锁定交易的解锁
-                    let posFind = unspentTxOuts.findIndex(item => {
-                        return item.LOCK==true && item.address===getPublicFromWallet();//TODO 有点问题
-                    });
+                    // let posFind = unspentTxOuts.findIndex(item => {
+                    //     return item.LOCK==true && item.address===getPublicFromWallet();//TODO 有点问题
+                    // });
 
-                    //预估大于实际 或者账户的钱够用,直接解锁
-                    if(unspentTxOuts[posFind].amount >= (amount1+amount2+amount3) || getAccountBalance() >= (amount1+amount2+amount3)){
+                    // //预估大于实际 或者账户的钱够用,直接解锁
+                    // if(unspentTxOuts[posFind].amount >= (amount1+amount2+amount3) || getAccountBalance() >= (amount1+amount2+amount3)){
+                    //
+                    //     unspentTxOuts[posFind].LOCK=false;
+                        sendTransaction(pk1,amount1,false,"",resReport1,resProof1,parseInt(ncount1));
+                        sendTransaction(pk2,amount2,false,"",resReport2,resProof2,parseInt(ncount2));
+                        sendTransaction(pk3,amount3,false,"",resReport3,resProof3,parseInt(ncount3));
 
-                        unspentTxOuts[posFind].LOCK=false;
-                        sendTransaction(pk1,amount1,false,"");
-                        sendTransaction(pk2,amount2,false,"");
-                        sendTransaction(pk3,amount3,false,"");
-
-                    }else{//清空所有钱并且停掉用户
-
-                        //TODO 将欠款数额，被欠款人地址，欠款人地址发送给agent ，，这种情况不容易出现，暂时不写
-                        let arrears: number = (amount1+amount2+amount3)-getAccountBalance();//得到欠款
-                        sendTransaction(returnPK,getAccountBalance(),false,"");//将账户中所有的钱发给任务执行方
-
-                    }
+                    // }else{//清空所有钱并且停掉用户
+                    //
+                    //     //TODO 将欠款数额，被欠款人地址，欠款人地址发送给agent ，，这种情况不容易出现，暂时不写
+                    //     let arrears: number = (amount1+amount2+amount3)-getAccountBalance();//得到欠款
+                    //     sendTransaction(returnPK,getAccountBalance(),false,"");//将账户中所有的钱发给任务执行方
+                    //
+                    // }
 
                     break;
             }

@@ -50,6 +50,10 @@ class Transaction {
 
     public txIns: TxIn[];
     public txOuts: TxOut[];
+
+    public report: string;
+    public proof: string;
+    public workload: number;
 }
 
 const getTransactionId = (transaction: Transaction): string => {

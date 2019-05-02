@@ -2,6 +2,7 @@ import {ec} from 'elliptic';
 import {existsSync, readFileSync, unlinkSync, writeFileSync} from 'fs';
 import * as _ from 'lodash';
 import {getPublicKey, getTransactionId, signTxIn, Transaction, TxIn, TxOut, UnspentTxOut} from './transaction';
+import {unspentTxOuts} from "./blockchain";
 
 const EC = new ec('secp256k1');
 const privateKeyLocation = process.env.PRIVATE_KEY || 'node/wallet/private_key';
@@ -140,39 +141,75 @@ const filterTxPoolTxs = (unspentTxOuts: UnspentTxOut[], transactionPool: Transac
  * @param txPool
  */
 const createTransaction = (receiverAddress: string, amount: number, privateKey: string,
-                           unspentTxOuts: UnspentTxOut[], txPool: Transaction[], isLOCK: boolean, codeHash: string): Transaction => {
+                           unspentTxOuts: UnspentTxOut[], txPool: Transaction[], isLOCK: boolean, codeHash: string, report: string, proof: string,workload: number): Transaction => {
 
     console.log('txPool: %s', JSON.stringify(txPool));
     const myAddress: string = getPublicKey(privateKey);
 
     //从UTXO池中提取自己的所有UTXO
-    const myUnspentTxOutsA = unspentTxOuts.filter((uTxO: UnspentTxOut) => uTxO.address === myAddress);
+    if(report.length===0 && proof.length===0){//普通交易提示
+        const myUnspentTxOutsA = unspentTxOuts.filter((uTxO: UnspentTxOut) => uTxO.address === myAddress);
 
-    const myUnspentTxOuts = filterTxPoolTxs(myUnspentTxOutsA, txPool);
+        const myUnspentTxOuts = filterTxPoolTxs(myUnspentTxOutsA, txPool);
 
-    // filter from unspentOutputs such inputs that are referenced in pool
-    const {includedUnspentTxOuts, leftOverAmount} = findTxOutsForAmount(amount, myUnspentTxOuts);
+        // filter from unspentOutputs such inputs that are referenced in pool
+        const {includedUnspentTxOuts, leftOverAmount} = findTxOutsForAmount(amount, myUnspentTxOuts);
 
-    const toUnsignedTxIn = (unspentTxOut: UnspentTxOut) => {
-        const txIn: TxIn = new TxIn();
-        txIn.txOutId = unspentTxOut.txOutId;
-        txIn.txOutIndex = unspentTxOut.txOutIndex;
-        return txIn;
-    };
+        const toUnsignedTxIn = (unspentTxOut: UnspentTxOut) => {
+            const txIn: TxIn = new TxIn();
+            txIn.txOutId = unspentTxOut.txOutId;
+            txIn.txOutIndex = unspentTxOut.txOutIndex;
+            return txIn;
+        };
 
-    const unsignedTxIns: TxIn[] = includedUnspentTxOuts.map(toUnsignedTxIn);
+        const unsignedTxIns: TxIn[] = includedUnspentTxOuts.map(toUnsignedTxIn);
 
-    const tx: Transaction = new Transaction();
-    tx.txIns = unsignedTxIns;
-    tx.txOuts = createTxOuts(receiverAddress, myAddress, amount, leftOverAmount, isLOCK, codeHash);
-    tx.id = getTransactionId(tx);
+        const tx: Transaction = new Transaction();
+        tx.txIns = unsignedTxIns;
+        tx.txOuts = createTxOuts(receiverAddress, myAddress, amount, leftOverAmount, isLOCK, codeHash);
+        tx.id = getTransactionId(tx);
 
-    tx.txIns = tx.txIns.map((txIn: TxIn, index: number) => {
-        txIn.signature = signTxIn(tx, index, privateKey, unspentTxOuts);
-        return txIn;
-    });
+        tx.txIns = tx.txIns.map((txIn: TxIn, index: number) => {
+            txIn.signature = signTxIn(tx, index, privateKey, unspentTxOuts);
+            return txIn;
+        });
+        tx.report=report;
+        tx.proof=proof;
+        tx.workload=workload;
+        return tx;
 
-    return tx;
+    }else{//算力交易提示
+        let posFind = unspentTxOuts.findIndex(item => {
+            return item.LOCK==true && item.address===getPublicFromWallet();//TODO 有点问题
+        });
+        const includedUnspentTxOuts=[unspentTxOuts[posFind]];
+        const leftOverAmount=unspentTxOuts[posFind].amount-amount;
+
+        const toUnsignedTxIn = (unspentTxOut: UnspentTxOut) => {
+            const txIn: TxIn = new TxIn();
+            txIn.txOutId = unspentTxOut.txOutId;
+            txIn.txOutIndex = unspentTxOut.txOutIndex;
+            return txIn;
+        };
+
+        const unsignedTxIns: TxIn[] = includedUnspentTxOuts.map(toUnsignedTxIn);
+
+        const tx: Transaction = new Transaction();
+        tx.txIns = unsignedTxIns;
+        tx.txOuts = createTxOuts(receiverAddress, myAddress, amount, leftOverAmount, isLOCK, codeHash);
+        tx.id = getTransactionId(tx);
+
+        tx.txIns = tx.txIns.map((txIn: TxIn, index: number) => {
+            txIn.signature = signTxIn(tx, index, privateKey, unspentTxOuts);
+            return txIn;
+        });
+        tx.report=report;
+        tx.proof=proof;
+        tx.workload=workload;
+        return tx;
+
+    }
+
 };
 
 export {createTransaction, getPublicFromWallet,

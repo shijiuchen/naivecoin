@@ -226,8 +226,9 @@ const generatePouwNextBlock = (message: Message ) => {
                 //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
                 const keyPair = ec.genKeyPair();
                 let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
-                let pk: string=keyPair.getPublicKey().toString('hex');//随机生成公钥
-                report= CryptoJS.SHA256("asylo").toString()+pk;//report 是随机生成的公钥+代码哈希
+                let pk: string=ec.keyFromPrivate(sk, 'hex').getPublic().encode('hex');//随机生成公钥
+
+                report= CryptoJS.SHA256("asylo").toString()+";"+pk;//report 是随机生成的公钥+代码哈希
                 const key1 = ec.keyFromPrivate(sk, 'hex');
                 pouw = toHexString(key1.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
                 console.log("report"+report);
@@ -246,8 +247,8 @@ const generatePouwNextBlock = (message: Message ) => {
                     //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
                     const keyPair = ec.genKeyPair();
                     let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
-                    let pk: string=keyPair.getPublicKey().toString('hex');//随机生成公钥
-                    report= CryptoJS.SHA256("asylo").toString()+pk;//report 是随机生成的公钥+代码哈希
+                    let pk: string=ec.keyFromPrivate(sk, 'hex').getPublic().encode('hex');//随机生成公钥
+                    report= CryptoJS.SHA256("asylo").toString()+";"+pk;//report 是随机生成的公钥+代码哈希
                     const key1 = ec.keyFromPrivate(sk, 'hex');
                     pouw = toHexString(key1.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
                     console.log("pouw"+pouw);
@@ -275,7 +276,7 @@ const generatePouwNextBlock = (message: Message ) => {
                 const nextTimestamp: number = getCurrentTimestamp();
                 const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
                 const blockData: Transaction[] = [coinbaseTx].concat(getTransactionPool());
-                const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0, pouw);
+                const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), SRNG, pouw);
                 const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), SRNG,parseInt(exeN),report,pouw);
 
                 if (addBlockToChain(newBlock)) {
@@ -358,8 +359,8 @@ const generatePouwNextBlock = (message: Message ) => {
 
                 const keyPair = ec.genKeyPair();
                 let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
-                let pk: string=keyPair.getPublicKey().toString('hex');//随机生成公钥
-                report= CryptoJS.SHA256("caffe").toString()+pk;//report 是随机生成的公钥+代码哈希
+                let pk: string=ec.keyFromPrivate(sk, 'hex').getPublic().encode('hex');//随机生成公钥
+                report= CryptoJS.SHA256("caffe").toString()+";"+pk;//report 是随机生成的公钥+代码哈希
                 const key1 = ec.keyFromPrivate(sk, 'hex');
                 pouw = toHexString(key1.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
                 console.log("pouw"+pouw);
@@ -378,8 +379,8 @@ const generatePouwNextBlock = (message: Message ) => {
                     //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
                     const keyPair = ec.genKeyPair();
                     let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
-                    let pk: string=keyPair.getPublicKey().toString('hex');//随机生成公钥
-                    report= CryptoJS.SHA256("caffe").toString()+pk;//report 是随机生成的公钥+代码哈希
+                    let pk: string=ec.keyFromPrivate(sk, 'hex').getPublic().encode('hex');//随机生成公钥
+                    report= CryptoJS.SHA256("caffe").toString()+";"+pk;//report 是随机生成的公钥+代码哈希
                     const key1 = ec.keyFromPrivate(sk, 'hex');
                     pouw = toHexString(key1.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
                     console.log("pouw"+pouw);
@@ -406,7 +407,7 @@ const generatePouwNextBlock = (message: Message ) => {
                 const nextTimestamp: number = getCurrentTimestamp();
                 const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
                 const blockData: Transaction[] = [coinbaseTx].concat(getTransactionPool());
-                const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0, pouw);
+                const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), SRNG, pouw);
                 const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), SRNG,parseInt(exeN),report,pouw);
 
                 if (addBlockToChain(newBlock)) {
@@ -510,8 +511,8 @@ const generatePouwNextBlock = (message: Message ) => {
                 //模拟使用intel私钥进行签名，签署result+exeN+关键字"SUCCESS"
                 const keyPair = ec.genKeyPair();
                 let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
-                let pk: string=keyPair.getPublicKey().toString('hex');//随机生成公钥
-                report= CryptoJS.SHA256("hadoop_master").toString()+pk;//report 是随机生成的公钥+代码哈希
+                let pk: string=ec.keyFromPrivate(sk, 'hex').getPublic().encode('hex');//随机生成公钥
+                report= CryptoJS.SHA256("hadoop_master").toString()+";"+pk;//report 是随机生成的公钥+代码哈希
                 const key = ec.keyFromPrivate(sk, 'hex');
                 pouw = toHexString(key.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
                 console.log("pouw"+pouw);
@@ -530,8 +531,8 @@ const generatePouwNextBlock = (message: Message ) => {
                     //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
                     const keyPair = ec.genKeyPair();
                     let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
-                    let pk: string=keyPair.getPublicKey().toString('hex');//随机生成公钥
-                    report= CryptoJS.SHA256("hadoop_master").toString()+pk;//report 是随机生成的公钥+代码哈希
+                    let pk: string=ec.keyFromPrivate(sk, 'hex').getPublic().encode('hex');//随机生成公钥
+                    report= CryptoJS.SHA256("hadoop_master").toString()+";"+pk;//report 是随机生成的公钥+代码哈希
                     const key1 = ec.keyFromPrivate(sk, 'hex');
                     pouw = toHexString(key1.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
                     console.log("pouw"+pouw);

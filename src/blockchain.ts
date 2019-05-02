@@ -6,11 +6,17 @@ import {
 } from './transaction';
 import {addToTransactionPool, getTransactionPool, updateTransactionPool} from './transactionPool';
 import {hexToBinary} from './util';
-import {createTransaction, findUnspentTxOuts, getBalance, getPrivateFromWallet, getPublicFromWallet} from './wallet';
+import {
+    createTransaction,
+    findUnspentTxOuts,
+    generatePrivateKey,
+    getBalance,
+    getPrivateFromWallet,
+    getPublicFromWallet
+} from './wallet';
 import {readFile, readFileSync} from "fs";
 import {All} from "tslint/lib/rules/completedDocsRule";
 // import {Message} from "_debugger";
-
 let ncountMap=new Map<string,number>(); //用于记录分布式任务指令计数
 let AllRes;
 let taskNameFrontend;
@@ -30,10 +36,12 @@ class Block {
     public data: Transaction[];
     public difficulty: number;
     public nonce: number;
+    public workload: number;//工作量
+    public report: string;//sgx产生的report
     public pouw: string;
 
     constructor(index: number, hash: string, previousHash: string,
-                timestamp: number, data: Transaction[], difficulty: number, nonce: number, pouw: string) {
+                timestamp: number, data: Transaction[], difficulty: number, nonce: number, workload: number, report: string, pouw: string) {
         this.index = index;
         this.previousHash = previousHash;
         this.timestamp = timestamp;
@@ -41,6 +49,8 @@ class Block {
         this.hash = hash;
         this.difficulty = difficulty;
         this.nonce = nonce;
+        this.workload=workload;
+        this.report=report;
         this.pouw=pouw;
     }
 }
@@ -56,7 +66,7 @@ const genesisTransaction = {
 };
 //创世块
 const genesisBlock: Block = new Block(
-    0, '91a73664bc84c0baa1fc75ea6e4aa6d1d20c5df664c724e3159aefc2e1186627', '', 1465154705, [genesisTransaction], 0, 0, ''
+    0, '91a73664bc84c0baa1fc75ea6e4aa6d1d20c5df664c724e3159aefc2e1186627', '', 1465154705, [genesisTransaction], 0, 0, 0, '',''
 );
 //区块链
 let blockchain: Block[] = [genesisBlock];
@@ -119,7 +129,7 @@ const generateRawNextBlock = (blockData: Transaction[]) => {
     const difficulty: number = 0;
     const nextIndex: number = previousBlock.index + 1;
     const nextTimestamp: number = getCurrentTimestamp();
-    const newBlock: Block = findBlock(nextIndex, previousBlock.hash, nextTimestamp, blockData, difficulty,"");
+    const newBlock: Block = findBlock(nextIndex, previousBlock.hash, nextTimestamp, blockData, difficulty,0,'','');
     if (addBlockToChain(newBlock)) {
         broadcastLatest();
         return newBlock;
@@ -152,6 +162,7 @@ const generatePouwNextBlock = (message: Message ) => {
     taskNameFrontend=taskName;
 
     let pouw = "";
+    let report = "";
     let result = "";
     let exeN ;
     //任务执行过程
@@ -207,19 +218,25 @@ const generatePouwNextBlock = (message: Message ) => {
             fs.truncate('/home/syc/naivecoin/log/result.txt', 0, function(){console.log('done')});
 
             //判断是否有出块条件
+            let SRNG1 : number=Math.floor(Math.random()*999+1);
+            let SRNG2 : number=1000;
+            let SRNG : number = SRNG1 / SRNG2;
             if(getDifficulty(getBlockchain()) == 0) {
 
                 //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
-                const key = ec.keyFromPrivate("d66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex');
-                pouw = toHexString(key.sign(result+";SUCCESS").toDER());
+                const keyPair = ec.genKeyPair();
+                let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
+                let pk: string=keyPair.getPublicKey().toString('hex');//随机生成公钥
+                report= CryptoJS.SHA256("asylo").toString()+pk;//report 是随机生成的公钥+代码哈希
+                const key1 = ec.keyFromPrivate(sk, 'hex');
+                pouw = toHexString(key1.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
+                console.log("report"+report);
                 console.log("pouw"+pouw);
 
             } else {
 
-                let SRNG1 : number=Math.floor(Math.random()*999+1);
-                let SRNG2 : number=1000;
+
                 let EXP : number =  2.718281828;
-                let SRNG : number = SRNG1 / SRNG2;
                 let parm1 : number = Math.pow(EXP,(exeN/getDifficulty(getBlockchain())));
                 let parm2 : number= Math.pow(EXP,-(exeN/getDifficulty(getBlockchain())));
                 let Prob : number= (parm1-parm2)/(parm1+parm2);
@@ -227,9 +244,14 @@ const generatePouwNextBlock = (message: Message ) => {
                 if(Prob > SRNG) {
 
                     //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
-                    const key = ec.keyFromPrivate("d66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex');
-                    pouw = toHexString(key.sign(result+";"+exeN+";"+"SUCCESS").toDER());
+                    const keyPair = ec.genKeyPair();
+                    let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
+                    let pk: string=keyPair.getPublicKey().toString('hex');//随机生成公钥
+                    report= CryptoJS.SHA256("asylo").toString()+pk;//report 是随机生成的公钥+代码哈希
+                    const key1 = ec.keyFromPrivate(sk, 'hex');
+                    pouw = toHexString(key1.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
                     console.log("pouw"+pouw);
+                    console.log("report"+report);
 
                 }
                 else {
@@ -254,7 +276,7 @@ const generatePouwNextBlock = (message: Message ) => {
                 const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
                 const blockData: Transaction[] = [coinbaseTx].concat(getTransactionPool());
                 const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0, pouw);
-                const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0,pouw);
+                const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), SRNG,parseInt(exeN),report,pouw);
 
                 if (addBlockToChain(newBlock)) {
 
@@ -329,19 +351,24 @@ const generatePouwNextBlock = (message: Message ) => {
             fs.truncate('/home/syc/naivecoin/log/result.txt', 0, function(){console.log('done')});
 
             //判断是否有出块条件
+            let SRNG1 : number=Math.floor(Math.random()*999+1);
+            let SRNG2 : number=1000;
+            let SRNG : number = SRNG1 / SRNG2;
             if(getDifficulty(getBlockchain()) == 0) {
 
-                //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
-                const key = ec.keyFromPrivate("d66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex');
-                pouw = toHexString(key.sign(result+";"+exeN+";"+"SUCCESS").toDER());
+                const keyPair = ec.genKeyPair();
+                let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
+                let pk: string=keyPair.getPublicKey().toString('hex');//随机生成公钥
+                report= CryptoJS.SHA256("caffe").toString()+pk;//report 是随机生成的公钥+代码哈希
+                const key1 = ec.keyFromPrivate(sk, 'hex');
+                pouw = toHexString(key1.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
                 console.log("pouw"+pouw);
+                console.log("report"+report);
 
             } else {
 
-                let SRNG1 : number=Math.floor(Math.random()*999+1);
-                let SRNG2 : number=1000;
+
                 let EXP : number =  2.718281828;
-                let SRNG : number = SRNG1 / SRNG2;
                 let parm1 : number = Math.pow(EXP,(exeN/getDifficulty(getBlockchain())));
                 let parm2 : number= Math.pow(EXP,-(exeN/getDifficulty(getBlockchain())));
                 let Prob : number= (parm1-parm2)/(parm1+parm2);
@@ -349,10 +376,14 @@ const generatePouwNextBlock = (message: Message ) => {
                 if(Prob > SRNG) {
 
                     //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
-                    const key = ec.keyFromPrivate("d66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex');
-                    pouw = toHexString(key.sign(result+";SUCCESS").toDER());
+                    const keyPair = ec.genKeyPair();
+                    let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
+                    let pk: string=keyPair.getPublicKey().toString('hex');//随机生成公钥
+                    report= CryptoJS.SHA256("caffe").toString()+pk;//report 是随机生成的公钥+代码哈希
+                    const key1 = ec.keyFromPrivate(sk, 'hex');
+                    pouw = toHexString(key1.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
                     console.log("pouw"+pouw);
-
+                    console.log("report"+report);
                 }
                 else {
 
@@ -376,7 +407,7 @@ const generatePouwNextBlock = (message: Message ) => {
                 const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
                 const blockData: Transaction[] = [coinbaseTx].concat(getTransactionPool());
                 const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0, pouw);
-                const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0,pouw);
+                const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), SRNG,parseInt(exeN),report,pouw);
 
                 if (addBlockToChain(newBlock)) {
 
@@ -469,20 +500,27 @@ const generatePouwNextBlock = (message: Message ) => {
             //删除有用功记录文件
             fs.truncate('/home/syc/naivecoin/log/result.txt', 0, function(){console.log('done')});
 
+
+            let SRNG1 : number=Math.floor(Math.random()*999+1);
+            let SRNG2 : number=1000;
+            let SRNG : number = SRNG1 / SRNG2;
             //判断是否有出块条件
             if(getDifficulty(getBlockchain()) == 0) {
 
                 //模拟使用intel私钥进行签名，签署result+exeN+关键字"SUCCESS"
-                const key = ec.keyFromPrivate("d66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex');
-                pouw = toHexString(key.sign(result+";"+exeN+";"+"SUCCESS").toDER());
+                const keyPair = ec.genKeyPair();
+                let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
+                let pk: string=keyPair.getPublicKey().toString('hex');//随机生成公钥
+                report= CryptoJS.SHA256("hadoop_master").toString()+pk;//report 是随机生成的公钥+代码哈希
+                const key = ec.keyFromPrivate(sk, 'hex');
+                pouw = toHexString(key.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
                 console.log("pouw"+pouw);
+                console.log("report"+report);
 
             } else {
 
-                let SRNG1 : number=Math.floor(Math.random()*999+1);
-                let SRNG2 : number=1000;
+
                 let EXP : number =  2.718281828;
-                let SRNG : number = SRNG1 / SRNG2;
                 let parm1 : number = Math.pow(EXP,(parseInt(exeN)/getDifficulty(getBlockchain())));
                 let parm2 : number= Math.pow(EXP,-(parseInt(exeN)/getDifficulty(getBlockchain())));
                 let Prob : number= (parm1-parm2)/(parm1+parm2);
@@ -490,8 +528,12 @@ const generatePouwNextBlock = (message: Message ) => {
                 if(Prob > SRNG) {
 
                     //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
-                    const key = ec.keyFromPrivate("d66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex');
-                    pouw = toHexString(key.sign(result+";"+exeN+";SUCCESS").toDER());
+                    const keyPair = ec.genKeyPair();
+                    let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
+                    let pk: string=keyPair.getPublicKey().toString('hex');//随机生成公钥
+                    report= CryptoJS.SHA256("hadoop_master").toString()+pk;//report 是随机生成的公钥+代码哈希
+                    const key1 = ec.keyFromPrivate(sk, 'hex');
+                    pouw = toHexString(key1.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
                     console.log("pouw"+pouw);
 
                 }
@@ -516,8 +558,8 @@ const generatePouwNextBlock = (message: Message ) => {
                 const nextTimestamp: number = getCurrentTimestamp();
                 const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
                 const blockData: Transaction[] = [coinbaseTx].concat(getTransactionPool());
-                const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0, pouw);
-                const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0,pouw);
+                const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), SRNG, pouw);
+                const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), SRNG,parseInt(exeN),report,pouw);
 
                 if (addBlockToChain(newBlock)) {
 
@@ -640,12 +682,12 @@ const generatenextBlockWithTransaction = (receiverAddress: string, amount: numbe
  * @param difficulty
  * @param pouw
  */
-const findBlock = (index: number, previousHash: string, timestamp: number, data: Transaction[], difficulty: number,pouw: string): Block => {
+const findBlock = (index: number, previousHash: string, timestamp: number, data: Transaction[], difficulty: number,workload: number, report: string, pouw: string): Block => {
     let nonce = 0;
     while (true) {
         const hash: string = calculatepouwHash(index, previousHash, timestamp, data, difficulty, nonce, pouw);
         if (hashMatchesDifficulty(hash, difficulty)) {
-            return new Block(index, hash, previousHash, timestamp, data, difficulty, nonce, pouw);
+            return new Block(index, hash, previousHash, timestamp, data, difficulty, nonce, workload,report,pouw);
         }
         nonce++;
     }

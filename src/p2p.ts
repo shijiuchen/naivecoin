@@ -1,3 +1,4 @@
+import * as CryptoJS from 'crypto-js';
 import * as WebSocket from 'ws';
 import {Server} from 'ws';
 import {
@@ -222,6 +223,7 @@ const initMessageHandler = (ws: WebSocket) => {
                     //获取执行的有用功
                     //延迟5秒，等待写入文件
                     let pouw;
+                    let report;
                     sleep(5000);
                     console.log("time out finished!");
 
@@ -248,19 +250,24 @@ const initMessageHandler = (ws: WebSocket) => {
                     fs.truncate('/home/syc/naivecoin/log/result.txt', 0, function(){console.log('done')});
 
                     //判断是否有出块条件
+                    let SRNG1 : number=Math.floor(Math.random()*999+1);
+                    let SRNG2 : number=1000;
+                    let SRNG : number = SRNG1 / SRNG2;
                     if(getDifficulty(getBlockchain()) == 0) {
 
                         //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
-                        const key = ec.keyFromPrivate("d66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex');
-                        pouw = toHexString(key.sign(exeN+";SUCCESS").toDER());
+                        const keyPair = ec.genKeyPair();
+                        let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
+                        let pk: string=keyPair.getPublicKey().toString('hex');//随机生成公钥
+                        report= CryptoJS.SHA256("hadoop_slave").toString()+pk;//report 是随机生成的公钥+代码哈希
+                        const key = ec.keyFromPrivate(sk, 'hex');
+                        pouw = toHexString(key.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
                         console.log("pouw"+pouw);
 
                     } else {
 
-                        let SRNG1 : number=Math.floor(Math.random()*999+1);
-                        let SRNG2 : number=1000;
+
                         let EXP : number =  2.718281828;
-                        let SRNG : number = SRNG1 / SRNG2;
                         let parm1 : number = Math.pow(EXP,(parseInt(exeN)/getDifficulty(getBlockchain())));
                         let parm2 : number= Math.pow(EXP,-(parseInt(exeN)/getDifficulty(getBlockchain())));
                         let Prob : number= (parm1-parm2)/(parm1+parm2);
@@ -268,8 +275,12 @@ const initMessageHandler = (ws: WebSocket) => {
                         if(Prob > SRNG) {
 
                             //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
-                            const key = ec.keyFromPrivate("d66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex');
-                            pouw = toHexString(key.sign(exeN+";SUCCESS").toDER());
+                            const keyPair = ec.genKeyPair();
+                            let sk: string = keyPair.getPrivate().toString(16);//随机生成私钥
+                            let pk: string=keyPair.getPublicKey().toString('hex');//随机生成公钥
+                            report= CryptoJS.SHA256("hadoop_slave").toString()+pk;//report 是随机生成的公钥+代码哈希
+                            const key = ec.keyFromPrivate(sk, 'hex');
+                            pouw = toHexString(key.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
                             console.log("pouw"+pouw);
 
                         }
@@ -295,7 +306,7 @@ const initMessageHandler = (ws: WebSocket) => {
                         const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
                         const blockData: Transaction[] = [coinbaseTx].concat(getTransactionPool());
                         const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0, pouw);
-                        const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0,pouw);
+                        const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), SRNG,parseInt(exeN),report,pouw);
 
                         if (addBlockToChain(newBlock)) {
 

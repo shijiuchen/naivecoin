@@ -114,7 +114,7 @@ class Agent {
         const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
         const blockData: Transaction[] = [coinbaseTx].concat(getTransactionPool());
         const hash: string = calculatepouwHash(nextIndex, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0, "");
-        const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0,"");
+        const newBlock: Block = new Block(nextIndex, hash, previousBlock.hash, nextTimestamp, blockData, getDifficulty(getBlockchain()), 0,0,'','');
         if (addBlockToChain(newBlock)) {
             broadcastLatest();
             //return newBlock;

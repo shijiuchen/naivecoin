@@ -184,10 +184,10 @@ const createTransaction = (receiverAddress: string, amount: number, privateKey: 
         const myUnspentTxOuts = filterTxPoolTxs(myUnspentTxOutsA, txPool);
 
         let posFind = myUnspentTxOuts.findIndex(item => {
-            return item.LOCK==true && item.address===getPublicFromWallet();//TODO 有点问题
+            return item.LOCK==true  //TODO 有点问题
         });
-        const includedUnspentTxOuts=[unspentTxOuts[posFind]];
-        const leftOverAmount=unspentTxOuts[posFind].amount-amount;
+        const includedUnspentTxOuts=[myUnspentTxOuts[posFind]];
+        const leftOverAmount=myUnspentTxOuts[posFind].amount-amount;
 
         const toUnsignedTxIn = (unspentTxOut: UnspentTxOut) => {
             const txIn: TxIn = new TxIn();

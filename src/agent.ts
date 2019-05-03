@@ -131,7 +131,12 @@ class Agent {
             .map((tx) => tx.txOuts)
             .flatten()
             .value();
-        const resTxouts: TxOut=minedTxOuts.find((txout) => txout.LOCK===true && txout.amount===parseInt(money)/3);
+        let resTxouts: TxOut;
+        if(taskName==="hadoop") {
+            resTxouts= minedTxOuts.find((txout) => txout.LOCK === true && txout.amount === parseInt(money) / 3);
+        }else{
+            resTxouts=minedTxOuts.find((txout) => txout.LOCK===true && txout.amount===parseInt(money));
+        }
         console.log("resTxouts="+JSON.stringify(resTxouts));
         if(resTxouts!=null) {//确实存在这笔锁定的TxOut
 

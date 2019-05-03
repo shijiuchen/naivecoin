@@ -179,7 +179,11 @@ const createTransaction = (receiverAddress: string, amount: number, privateKey: 
         return tx;
 
     }else{//算力交易提示
-        let posFind = unspentTxOuts.findIndex(item => {
+        const myUnspentTxOutsA = unspentTxOuts.filter((uTxO: UnspentTxOut) => uTxO.address === myAddress);
+
+        const myUnspentTxOuts = filterTxPoolTxs(myUnspentTxOutsA, txPool);
+
+        let posFind = myUnspentTxOuts.findIndex(item => {
             return item.LOCK==true && item.address===getPublicFromWallet();//TODO 有点问题
         });
         const includedUnspentTxOuts=[unspentTxOuts[posFind]];

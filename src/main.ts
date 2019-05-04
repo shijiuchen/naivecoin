@@ -115,11 +115,11 @@ const initHttpServer = (myHttpPort: number) => {
         try {
             const address = req.body.address;
             const amount = req.body.amount;
-            const isLOCK = req.body.isLOCK;
-            const codeHash = req.body.codeHash;
-            const report = req.body.report;
-            const proof = req.body.proof;
-            const workload = req.body.workload;
+            const isLOCK = false;
+            const codeHash = "";
+            const report = "";
+            const proof = "";
+            const workload = 0;
 
             if (address === undefined || amount === undefined) {
                 throw Error('invalid address or amount');

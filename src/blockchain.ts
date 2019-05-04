@@ -453,10 +453,10 @@ const generatePouwNextBlock = (message: Message ) => {
     }else if(taskName === "hadoop"){
         console.log("find hadoop");
 
-        //将用户传递的参数写入file0.txt
-        var fs = require('fs');
-        var pathin="/home/syc/naivecoin/file0.txt";
-        fs.writeFileSync(pathin,params,"utf8");
+        // //将用户传递的参数写入file0.txt
+        // var fs = require('fs');
+        // var pathin="/home/syc/naivecoin/file0.txt";
+        // fs.writeFileSync(pathin,params,"utf8");
 
 
         exec('bash /home/syc/naivecoin/start_hadoopWordCount.sh', (err, stdout, stderr) => {

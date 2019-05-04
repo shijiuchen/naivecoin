@@ -190,9 +190,9 @@ const initMessageHandler = (ws: WebSocket) => {
                     }else{//钱数足，进行UTXO锁定
                         //更改数据结构、找零
                         if(taskName==="hadoop"){
-                            sendTransaction(getPublicFromWallet(),parseInt(money)/3,true, CryptoJS.SHA256(taskName).toString(),'','',0);
-                            sendTransaction(getPublicFromWallet(),parseInt(money)/3,true, CryptoJS.SHA256(taskName).toString(),'','',0);
-                            sendTransaction(getPublicFromWallet(),parseInt(money)/3,true, CryptoJS.SHA256(taskName).toString(),'','',0);
+                            sendTransaction(getPublicFromWallet(),Math.trunc(parseInt(money)/3),true, CryptoJS.SHA256(taskName).toString(),'','',0);
+                            sendTransaction(getPublicFromWallet(),Math.trunc(parseInt(money)/3),true, CryptoJS.SHA256(taskName).toString(),'','',0);
+                            sendTransaction(getPublicFromWallet(),Math.trunc(parseInt(money)/3),true, CryptoJS.SHA256(taskName).toString(),'','',0);
                         }else{
                             sendTransaction(getPublicFromWallet(),parseInt(money),true, CryptoJS.SHA256(taskName).toString(),'','',0);
                         }

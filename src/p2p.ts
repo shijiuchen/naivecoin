@@ -270,6 +270,7 @@ const initMessageHandler = (ws: WebSocket) => {
 
                         //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
                         report= CryptoJS.SHA256("hadoop_slave").toString()+";"+pk;//report 是随机生成的公钥+代码哈希
+                        report=report+";"+toHexString(ec.keyFromPrivate("66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex').sign(report.toString()).toDER());
                         const key = ec.keyFromPrivate(sk, 'hex');
                         pouw = toHexString(key.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
                         console.log("pouw"+pouw);
@@ -286,6 +287,7 @@ const initMessageHandler = (ws: WebSocket) => {
 
                             //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
                             report= CryptoJS.SHA256("hadoop_slave").toString()+";"+pk;//report 是随机生成的公钥+代码哈希
+                            report=report+";"+toHexString(ec.keyFromPrivate("66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex').sign(report.toString()).toDER());
                             const key = ec.keyFromPrivate(sk, 'hex');
                             pouw = toHexString(key.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
                             console.log("pouw"+pouw);
@@ -358,7 +360,7 @@ const initMessageHandler = (ws: WebSocket) => {
                     //分布式任务返还结果
                 case MessageType.RESULTAllNODES:
 
-                    let ResAllNodesAmount: string[]=message.data.toString().split(":");
+                    let ResAllNodesAmount: string[]=message.data.toString().split("?");
                     let pk1 : string = ResAllNodesAmount[0];
                     let ncount1 : string = ResAllNodesAmount[1];
                     let pk2 : string = ResAllNodesAmount[2];

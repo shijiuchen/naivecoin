@@ -274,8 +274,8 @@ class Agent {
      */
     public estimateUTXO = (reqCPU: string, reqMEM: string, estiTime: string): number =>{
         // return parseInt(reqCPU)*parseInt(reqMEM)*parseInt(estiTime)/100;
-        let value: number=parseInt(reqCPU)*parseInt(reqMEM)*parseInt(estiTime);
-        return Math.trunc(Math.cbrt(value));
+        let value: number=(parseInt(reqCPU)+parseInt(reqMEM))*parseInt(estiTime);
+        return Math.trunc(Math.cbrt(value))*1.2;
     }
     /**
      * 对于任务发布者进行UTXO锁定请求

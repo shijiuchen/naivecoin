@@ -16,7 +16,7 @@ do
         while :;
         do
             ps1=`ps aux|grep $softname1 |grep -v grep|grep -v sh|awk '{print $3}'`
-            ps2=`ps aux|grep $softname1 |grep -v grep|grep -v sh|awk '{print $4}'`
+            ps2=`ps aux|grep $softname1 |grep -v grep|grep -v sh|awk '{print $6}'`
             echo -e "\t $ps1 " >> /home/syc/naivecoin/log/cpu.txt
             echo -e "\t $ps2 " >> /home/syc/naivecoin/log/mem.txt
             sed -i 's/^[[:space:]]//g' /home/syc/naivecoin/log/cpu.txt
@@ -25,7 +25,8 @@ do
             if [ ! -n "$a" ]; then
                 sum1=`awk '{sum += $1};END {print sum}' /home/syc/naivecoin/log/cpu.txt`
                 sum2=`awk '{sum += $1};END {print sum}' /home/syc/naivecoin/log/mem.txt`
-                sum=$(echo $sum1+$sum2 | bc)
+                sum3=$(echo "scale=2; $sum2 / 1024" | bc)
+                sum=$(echo $sum1+$sum3 | bc)
                 echo $sum
                 echo -e "$sum " >> /home/syc/naivecoin/log/result.txt
                 rm /home/syc/naivecoin/log/cpu.txt
@@ -43,7 +44,7 @@ do
         while :;
         do
             ps1=`ps aux|grep $softname2 |grep -v grep|grep -v sh|awk '{print $3}'`
-            ps2=`ps aux|grep $softname2 |grep -v grep|grep -v sh|awk '{print $4}'`
+            ps2=`ps aux|grep $softname2 |grep -v grep|grep -v sh|awk '{print $6}'`
             echo -e "\t $ps1 " >> /home/syc/naivecoin/log/cpu.txt
             echo -e "\t $ps2 " >> /home/syc/naivecoin/log/mem.txt
             sed -i 's/^[[:space:]]//g' /home/syc/naivecoin/log/cpu.txt
@@ -52,10 +53,11 @@ do
             if [ ! -n "$a" ]; then
                 sum1=`awk '{sum += $1};END {print sum}' /home/syc/naivecoin/log/cpu.txt`
                 sum2=`awk '{sum += $1};END {print sum}' /home/syc/naivecoin/log/mem.txt`
-                sum=$(echo $sum1+$sum2 | bc)
+                 sum3=$(echo "scale=2; $sum2 / 1024" | bc)
+                sum=$(echo $sum1+$sum3 | bc)
                 echo $sum
                 echo -e "$sum " >> /home/syc/naivecoin/log/result.txt
-                rm /home/syc/naivecoin/log/cpu.txt
+               rm /home/syc/naivecoin/log/cpu.txt
                 rm /home/syc/naivecoin/log/mem.txt
             break
             fi
@@ -70,7 +72,7 @@ do
         while :;
         do
             ps1=`ps aux|grep $softname3 |grep -v grep|grep -v sh|awk '{print $3}'`
-            ps2=`ps aux|grep $softname3 |grep -v grep|grep -v sh|awk '{print $4}'`
+            ps2=`ps aux|grep $softname3 |grep -v grep|grep -v sh|awk '{print $6}'`
             echo -e "\t $ps1 " >> /home/syc/naivecoin/log/cpu.txt
             echo -e "\t $ps2 " >> /home/syc/naivecoin/log/mem.txt
             sed -i 's/^[[:space:]]//g' /home/syc/naivecoin/log/cpu.txt
@@ -79,7 +81,8 @@ do
             if [ ! -n "$a" ]; then
                 sum1=`awk '{sum += $1};END {print sum}' /home/syc/naivecoin/log/cpu.txt`
                 sum2=`awk '{sum += $1};END {print sum}' /home/syc/naivecoin/log/mem.txt`
-                sum=$(echo $sum1+$sum2 | bc)
+                 sum3=$(echo "scale=2; $sum2 / 1024" | bc)
+                sum=$(echo $sum1+$sum3 | bc)
                 echo $sum
                 echo -e "$sum " >> /home/syc/naivecoin/log/result.txt
                 rm /home/syc/naivecoin/log/cpu.txt

@@ -237,6 +237,8 @@ const generatePouwNextBlock = (message: Message ) => {
                 //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
 
                 report= CryptoJS.SHA256("asylo").toString()+";"+pk;//report 是随机生成的公钥+代码哈希
+                report=report+";"+toHexString(ec.keyFromPrivate("66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex').sign(report.toString()).toDER());
+
                 const key1 = ec.keyFromPrivate(sk, 'hex');
                 pouw = toHexString(key1.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
                 console.log("report"+report);
@@ -254,6 +256,7 @@ const generatePouwNextBlock = (message: Message ) => {
 
                     //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
                     report= CryptoJS.SHA256("asylo").toString()+";"+pk;//report 是随机生成的公钥+代码哈希
+                    report=report+";"+toHexString(ec.keyFromPrivate("66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex').sign(report.toString()).toDER());
                     const key1 = ec.keyFromPrivate(sk, 'hex');
                     pouw = toHexString(key1.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
                     console.log("pouw"+pouw);
@@ -372,6 +375,7 @@ const generatePouwNextBlock = (message: Message ) => {
             if(getDifficulty(getBlockchain()) == 0) {
 
                 report= CryptoJS.SHA256("caffe").toString()+";"+pk;//report 是随机生成的公钥+代码哈希
+                report=report+";"+toHexString(ec.keyFromPrivate("66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex').sign(report.toString()).toDER());
                 const key1 = ec.keyFromPrivate(sk, 'hex');
                 pouw = toHexString(key1.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
                 console.log("pouw"+pouw);
@@ -389,6 +393,7 @@ const generatePouwNextBlock = (message: Message ) => {
 
                     //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
                     report= CryptoJS.SHA256("caffe").toString()+";"+pk;//report 是随机生成的公钥+代码哈希
+                    report=report+";"+toHexString(ec.keyFromPrivate("66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex').sign(report.toString()).toDER());
                     const key1 = ec.keyFromPrivate(sk, 'hex');
                     pouw = toHexString(key1.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
                     console.log("pouw"+pouw);
@@ -525,6 +530,7 @@ const generatePouwNextBlock = (message: Message ) => {
 
                 //模拟使用intel私钥进行签名，签署result+exeN+关键字"SUCCESS"
                 report= CryptoJS.SHA256("hadoop_master").toString()+";"+pk;//report 是随机生成的公钥+代码哈希
+                report=report+";"+toHexString(ec.keyFromPrivate("66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex').sign(report.toString()).toDER());
                 const key = ec.keyFromPrivate(sk, 'hex');
                 pouw = toHexString(key.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
                 console.log("pouw"+pouw);
@@ -542,6 +548,7 @@ const generatePouwNextBlock = (message: Message ) => {
 
                     //模拟使用intel私钥进行签名，签署result+关键字"SUCCESS"
                     report= CryptoJS.SHA256("hadoop_master").toString()+";"+pk;//report 是随机生成的公钥+代码哈希
+                    report=report+";"+toHexString(ec.keyFromPrivate("66437e07a0dd631f3451b4a4cf86336486594ec46a771875db756220518360f", 'hex').sign(report.toString()).toDER());
                     const key1 = ec.keyFromPrivate(sk, 'hex');
                     pouw = toHexString(key1.sign(CryptoJS.SHA256(exeN+getDifficulty(getBlockchain())+SRNG).toString()).toDER());
                     console.log("pouw"+pouw);
@@ -670,8 +677,8 @@ const ReturnAllNcount = (message: Message) => {
                 ip = s._socket.remoteAddress.substr(7)
             }
             if(ip == information[2].toString()){
-                let information : Message = ({'type': MessageType.RESULTAllNODES, 'data': keys[0]+":"+values[0]+":"+
-                        keys[1]+":"+values[1]+":"+keys[2]+":"+values[2]+":"+AllRes+":"+values1[0]+":"+values1[1]+":"+values1[2]+":"+values2[0]+":"+values2[1]+":"+values2[2]});
+                let information : Message = ({'type': MessageType.RESULTAllNODES, 'data': keys[0]+"?"+values[0]+"?"+
+                        keys[1]+"?"+values[1]+"?"+keys[2]+"?"+values[2]+"?"+AllRes+"?"+values1[0]+"?"+values1[1]+"?"+values1[2]+"?"+values2[0]+"?"+values2[1]+"?"+values2[2]});
                 console.log(information);
                 console.log(JSON.stringify(information));
                 s.send(JSON.stringify(information));
